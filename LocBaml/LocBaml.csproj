@@ -1,22 +1,32 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net9.0-windows</TargetFramework>
-    <TargetType>exe</TargetType>
-	<OutputType>exe</OutputType>
-	<LangVersion>preview</LangVersion>
-    <UseWPF>true</UseWPF>
-	  
-   </PropertyGroup>
+	<!--Base build properties-->
+	<PropertyGroup>
+		<TargetFramework>net9.0-windows</TargetFramework>
+		<LangVersion>preview</LangVersion>
+		<Nullable>enable</Nullable>
+		
+		<TargetType>exe</TargetType>
+		<OutputType>exe</OutputType>
+		
+		<UseWPF>true</UseWPF>
+	</PropertyGroup>
 
-   <ItemGroup>
-        <EmbeddedResource Include="Resources\StringTable.resText">
-            <LogicalName>Resources.StringTable.resources</LogicalName>
-        </EmbeddedResource>
-   </ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="Resources\StringTable.resText">
+			<LogicalName>Resources.StringTable.resources</LogicalName>
+		</EmbeddedResource>
+	</ItemGroup>
 
-   <ItemGroup>
-     <PackageReference Include="System.Resources.Extensions" Version="8.0.0" />
-   </ItemGroup>
+	<!--We need this for DeserializingResourceReader-->
+	<ItemGroup>
+		<PackageReference Include="System.Resources.Extensions" Version="8.0.0" />
+	</ItemGroup>
+
+	<!--Assembly Information-->
+	<PropertyGroup>
+		<AssemblyName>LocBamlCore</AssemblyName>
+		<AssemblyVersion>9.0.267.17756</AssemblyVersion>
+	</PropertyGroup>
 
 </Project>
