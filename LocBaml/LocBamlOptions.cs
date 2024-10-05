@@ -5,12 +5,12 @@
 // Modified 5th Oct 2024
 // by h3xds1nz
 
-using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Reflection;
 using System.Security;
+using System.IO;
+using System;
 
 namespace BamlLocalization
 {
@@ -29,14 +29,13 @@ namespace BamlLocalization
         internal bool IsVerbose;
         internal FileType TranslationFileType;
         internal FileType InputType;
-        internal List<string> AssemblyPaths;
-        internal Assembly[] Assemblies;
+        internal List<string>? AssemblyPaths;
+        internal Assembly[]? Assemblies;
 
         /// <summary>
-        /// return true if the operation succeeded.
-        /// otherwise, return false
+        /// return true if the operation succeeded otherwise, return false
         /// </summary>
-        internal string CheckAndSetDefault()
+        internal string? CheckAndSetDefault()
         {
             // we validate the options here and also set default if we can
 
@@ -94,7 +93,6 @@ namespace BamlLocalization
                 // Rule #4: before generation, we must have translation file
                 if (string.IsNullOrEmpty(Translations))
                 {
-
                     return StringLoader.Get("TranslationNeeded");
                 }
                 else
@@ -134,7 +132,6 @@ namespace BamlLocalization
                     // Rule #5.2: If it is generating, and the output can't be empty
                     return StringLoader.Get("OutputDirectoryNeeded");
                 }
-
             }
             else
             {
@@ -143,7 +140,7 @@ namespace BamlLocalization
                 if (ToParse)
                 {
                     string fileName;
-                    string outputDir;
+                    string? outputDir;
 
                     if (Directory.Exists(Output))
                     {
@@ -163,11 +160,7 @@ namespace BamlLocalization
                     if (string.IsNullOrEmpty(fileName))
                     {
                         TranslationFileType = FileType.CSV;
-                        Output = outputDir
-                               + Path.DirectorySeparatorChar
-                               + Path.GetFileName(Input)
-                               + "."
-                               + TranslationFileType.ToString();
+                        Output = $"{outputDir}{Path.DirectorySeparatorChar}{Path.GetFileName(Input.AsSpan())}.{TranslationFileType}";
                     }
                     else
                     {
@@ -200,37 +193,14 @@ namespace BamlLocalization
                 Assemblies = new Assembly[AssemblyPaths.Count];
                 for (int i = 0; i < Assemblies.Length; i++)
                 {
-                    string errorMsg = null;
                     try
-                    {
-                        // load the assembly
+                    {   // load the assembly                      
                         Assemblies[i] = Assembly.LoadFrom(AssemblyPaths[i]);
                     }
-                    catch (ArgumentException argumentError)
-                    {
-                        errorMsg = argumentError.Message;
-                    }
-                    catch (BadImageFormatException formatError)
-                    {
-                        errorMsg = formatError.Message;
-                    }
-                    catch (FileNotFoundException fileError)
-                    {
-                        errorMsg = fileError.Message;
-                    }
-                    catch (PathTooLongException pathError)
-                    {
-                        errorMsg = pathError.Message;
-                    }
-                    catch (SecurityException securityError)
-                    {
-
-                        errorMsg = securityError.Message;
-                    }
-
-                    if (errorMsg != null)
-                    {
-                        return errorMsg; // return error message when loading this assembly
+                    catch (Exception ex) when (ex is ArgumentException or FileLoadException or BadImageFormatException
+                                                  or FileNotFoundException or PathTooLongException or SecurityException)
+                    {   // return error message when loading this assembly
+                        return ex.Message;
                     }
                 }
             }
@@ -238,7 +208,6 @@ namespace BamlLocalization
             // if we come to this point, we are all fine, return null error message
             return null;
         }
-
 
         /// <summary>
         /// Write message line depending on IsVerbose flag

@@ -2,23 +2,15 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-//---------------------------------------------------------------------------
-//
-// Description: LocBaml command line tool. 
-//
-//---------------------------------------------------------------------------
+// Modified 5th Oct 2024
+// by h3xds1nz
 
-using System;
-using System.IO;
-using System.Globalization;
-using System.Diagnostics;
-using System.Threading;
-using System.Reflection;
-using System.Security;
-using System.Windows;
-using System.Windows.Threading;
-using System.Collections.Generic;
 using BamlLocalization.ConsoleSupport;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Reflection;
+using System.IO;
+using System;
 
 namespace BamlLocalization
 {
@@ -47,7 +39,7 @@ namespace BamlLocalization
         public static int Main(string[] args)
         {
 
-            GetCommandLineOptions(args, out LocBamlOptions options, out string errorMessage);
+            GetCommandLineOptions(args, out LocBamlOptions? options, out string? errorMessage);
 
             if (errorMessage != null)
             {
@@ -108,9 +100,9 @@ namespace BamlLocalization
         private static void GenerateBamlResources(LocBamlOptions options)
         {   
             Stream input = File.OpenRead(options.Translations);
-            using (ResourceTextReader reader = new ResourceTextReader(options.TranslationFileType, input))
+            using (ResourceTextReader reader = new(options.TranslationFileType, input))
             {   
-                TranslationDictionariesReader dictionaries = new TranslationDictionariesReader(reader);                                                               
+                TranslationDictionariesReader dictionaries = new(reader);                                                               
                 ResourceGenerator.Generate(options, dictionaries);
             }         
         }
@@ -118,7 +110,7 @@ namespace BamlLocalization
         /// <summary>
         /// get CommandLineOptions, return error message
         /// </summary>
-        private static void GetCommandLineOptions(string[] args, out LocBamlOptions options, out string errorMessage)
+        private static void GetCommandLineOptions(string[] args, out LocBamlOptions? options, out string? errorMessage)
         {
             CommandLineParser commandLineParser; 
             try
@@ -228,6 +220,4 @@ namespace BamlLocalization
             return currentAssembly.GetName().Version.ToString(4);
         }
     }
-
-  
 }
