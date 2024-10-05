@@ -15,4 +15,8 @@
         </EmbeddedResource>
    </ItemGroup>
 
+   <ItemGroup>
+     <PackageReference Include="System.Resources.Extensions" Version="8.0.0" />
+   </ItemGroup>
+
 </Project>

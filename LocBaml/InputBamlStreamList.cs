@@ -17,6 +17,7 @@ using System.Reflection;
 using System.Diagnostics;
 using System.Resources;
 using System.Collections.Generic;
+using System.Resources.Extensions;
 
 namespace BamlLocalization
 {
@@ -41,7 +42,7 @@ namespace BamlLocalization
                 }
                 case FileType.RESOURCES:
                 {
-                    using (ResourceReader resourceReader = new(options.Input))
+                    using (DeserializingResourceReader resourceReader = new(options.Input))
                     {
                         // enumerate all bamls in a resources
                         EnumerateBamlInResources(resourceReader, options.Input);
@@ -64,7 +65,7 @@ namespace BamlLocalization
                         }
  
                         Stream resourceStream = assembly.GetManifestResourceStream(resourceName);
-                        using (ResourceReader reader = new(resourceStream))
+                        using (DeserializingResourceReader reader = new(resourceStream))
                         {
                             EnumerateBamlInResources(reader, resourceName);                              
                         }
@@ -113,7 +114,7 @@ namespace BamlLocalization
         /// <summary>
         /// Enumerate baml streams in a resources file
         /// </summary>        
-        private void EnumerateBamlInResources(ResourceReader reader, string resourceName)
+        private void EnumerateBamlInResources(DeserializingResourceReader reader, string resourceName)
         {                       
             foreach (DictionaryEntry entry in reader)
             {
