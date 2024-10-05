@@ -18,6 +18,7 @@ using System.Reflection;
 using System.Security;
 using System.Windows;
 using System.Windows.Threading;
+using System.Collections.Generic;
 
 namespace BamlLocalization
 {
@@ -195,7 +196,7 @@ namespace BamlLocalization
                 {
                     if (options.AssemblyPaths == null)
                     {
-                        options.AssemblyPaths = new ArrayList();
+                        options.AssemblyPaths = new List<string>();
                     }
 
                     options.AssemblyPaths.Add(commandLineOption.Value);
@@ -265,23 +266,20 @@ namespace BamlLocalization
         internal bool           IsVerbose;
         internal FileType       TranslationFileType;
         internal FileType       InputType;
-        internal ArrayList      AssemblyPaths;
+        internal List<string>   AssemblyPaths;
         internal Assembly[]     Assemblies;
 
         /// <summary>
         /// return true if the operation succeeded.
         /// otherwise, return false
         /// </summary>
-        internal  string  CheckAndSetDefault()
+        internal string CheckAndSetDefault()
         {
-            // we validate the options here and also set default
-            // if we can
+            // we validate the options here and also set default if we can
 
             // Rule #1: One and only one action at a time
-            // i.e. Can't parse and generate at the same time
-            //      Must do one of them
-            if ((ToParse && ToGenerate) ||
-                (!ToParse && !ToGenerate))
+            // i.e. Can't parse and generate at the same time; must do only one of them
+            if ((ToParse && ToGenerate) || (!ToParse && !ToGenerate))
                 return StringLoader.Get("MustChooseOneAction");
 
             // Rule #2: Must have an input 
@@ -296,28 +294,28 @@ namespace BamlLocalization
                     return StringLoader.Get("FileNotFound", Input);
                 }
 
-                string extension = Path.GetExtension(Input);
+                ReadOnlySpan<char> extension = Path.GetExtension(Input.AsSpan());
              
                 // Get the input file type.
-                if (string.Compare(extension, "." + FileType.BAML.ToString(), true, CultureInfo.InvariantCulture) == 0)
+                if (extension.Equals($".{nameof(FileType.BAML)}", StringComparison.OrdinalIgnoreCase))
                 {
                     InputType = FileType.BAML;
                 }
-                else if (string.Compare(extension, "." + FileType.RESOURCES.ToString(), true, CultureInfo.InvariantCulture) == 0)
+                else if (extension.Equals($".{nameof(FileType.RESOURCES)}", StringComparison.OrdinalIgnoreCase))
                 {
                     InputType = FileType.RESOURCES;                    
                 }
-                else if (string.Compare(extension, "." + FileType.DLL.ToString(), true, CultureInfo.InvariantCulture) == 0)
+                else if (extension.Equals($".{nameof(FileType.DLL)}", StringComparison.OrdinalIgnoreCase))
                 {
                     InputType = FileType.DLL;
                 }
-                else if (string.Compare(extension, "." + FileType.EXE.ToString(), true, CultureInfo.InvariantCulture) == 0)
+                else if (extension.Equals($".{nameof(FileType.EXE)}", StringComparison.OrdinalIgnoreCase))
                 {
                     InputType = FileType.EXE;
                 }
                 else
                 {
-                    return StringLoader.Get("FileTypeNotSupported", extension);
+                    return StringLoader.Get("FileTypeNotSupported", extension.ToString());
                 }                                
             }
             
@@ -338,7 +336,7 @@ namespace BamlLocalization
                 }
                 else
                 {
-                    string extension = Path.GetExtension(Translations);
+                    ReadOnlySpan<char> extension = Path.GetExtension(Translations.AsSpan());
 
                     if (!File.Exists(Translations))
                     {
@@ -346,7 +344,7 @@ namespace BamlLocalization
                     }
                     else
                     {
-                        if (string.Compare(extension, "." + FileType.CSV.ToString(), true, CultureInfo.InvariantCulture) == 0)
+                        if (extension.Equals($".{nameof(FileType.CSV)}", StringComparison.OrdinalIgnoreCase))
                         {
                             TranslationFileType = FileType.CSV;
                         }
@@ -358,16 +356,14 @@ namespace BamlLocalization
                 }
             }
 
-            
-
             // Rule #5: If the output file name is empty, we act accordingly
             if (string.IsNullOrEmpty(Output))
             {
                 // Rule #5.1: If it is parse, we default to [input file name].csv
                 if (ToParse)
                 {
-                    string fileName = Path.GetFileNameWithoutExtension(Input);                    
-                    Output = fileName + "." + FileType.CSV.ToString();
+                    ReadOnlySpan<char> fileName = Path.GetFileNameWithoutExtension(Input.AsSpan());                    
+                    Output = $"{fileName}.{nameof(FileType.CSV)}";
                     TranslationFileType = FileType.CSV;
                 }
                 else  
@@ -412,10 +408,10 @@ namespace BamlLocalization
                     else
                     {
                         // Rule #6.2: if we have file name, check the extension.
-                        string extension = Path.GetExtension(Output);
+                        ReadOnlySpan<char> extension = Path.GetExtension(Output.AsSpan());
 
                         // ignore case and invariant culture
-                        if (string.Compare(extension, "." + FileType.CSV.ToString(), true, CultureInfo.InvariantCulture) == 0)
+                        if (extension.Equals($".{nameof(FileType.CSV)}", StringComparison.OrdinalIgnoreCase))
                         {
                             TranslationFileType = FileType.CSV;
                         }
@@ -444,7 +440,7 @@ namespace BamlLocalization
                     try
                     {
                         // load the assembly
-                        Assemblies[i] = Assembly.LoadFrom((string) AssemblyPaths[i]);
+                        Assemblies[i] = Assembly.LoadFrom(AssemblyPaths[i]);
                     }
                     catch (ArgumentException argumentError)
                     {
