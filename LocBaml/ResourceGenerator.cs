@@ -79,10 +79,10 @@ namespace BamlLocalization
                         using (Stream output = File.OpenWrite(fullPathOutput))
                         {
                             // create a Resource reader on the input;
-                            IResourceReader reader = new ResourceReader(input);
+                            ResourceReader reader = new(input);
     
                             // create a writer on the output;
-                            IResourceWriter writer = new ResourceWriter(output);
+                            ResourceWriter writer = new(output);
 
                             GenerateResourceStream(
                                 options,         // options
@@ -171,8 +171,8 @@ namespace BamlLocalization
         private static void GenerateResourceStream(
                 LocBamlOptions options,                     // options from the command line
                 string resourceName,                        // the name of the .resources file
-                IResourceReader reader,                     // the reader for the .resources
-                IResourceWriter writer,                     // the writer for the output .resources
+                ResourceReader reader,                      // the reader for the .resources
+                ResourceWriter writer,                      // the writer for the output .resources
                 TranslationDictionariesReader dictionaries  // the translations
             )
         {
@@ -228,13 +228,12 @@ namespace BamlLocalization
                         // The item returned from resource reader is not serializable
                         // If it is Stream, we can wrap all the values in a MemoryStream and 
                         // add to the resource. Otherwise, we had to skip this resource.
-			Stream resourceStream = resourceValue as Stream;						
-                        if (resourceStream != null)
+                        if (resourceValue is Stream resourceStream)
                         {
-			    Stream targetStream = new MemoryStream();
                             byte[] buffer = new byte[resourceStream.Length];
-                            resourceStream.Read(buffer, 0, buffer.Length);
-                            targetStream = new MemoryStream(buffer);
+                            MemoryStream targetStream = new(buffer);
+                            resourceStream.ReadExactly(buffer);
+
 			    resourceValue = targetStream;
                         }                        
                     }                
@@ -326,11 +325,11 @@ namespace BamlLocalization
                 Stream resourceStream       = srcAsm.GetManifestResourceStream(resourceName);
                 
                 // see if it is a .resources
-                if (neutralResourceName.ToLower(CultureInfo.InvariantCulture).EndsWith(".resources"))
+                if (neutralResourceName.EndsWith(".resources", StringComparison.OrdinalIgnoreCase))
                 {                                   
                     // now we think we have resource stream 
                     // get the resource writer
-                    IResourceWriter writer;
+                    ResourceWriter writer;
                     // check if it is a embeded assembly
                     if ((resourceLocation & ResourceLocation.Embedded) != 0)
                     {
@@ -353,7 +352,7 @@ namespace BamlLocalization
                     }
 
                     // get the resource reader
-                    IResourceReader reader = new ResourceReader(resourceStream);
+                    ResourceReader reader = new(resourceStream);
 
                     // generate the resources
                     GenerateResourceStream(options, resourceName, reader, writer, dictionaries);
@@ -364,12 +363,12 @@ namespace BamlLocalization
                 else
                 {
                     // else it is a stand alone untyped manifest resources.
-                    string extension = Path.GetExtension(targetResourceName);                    
+                    ReadOnlySpan<char> extension = Path.GetExtension(targetResourceName.AsSpan());                    
 
                     string fullFileName = Path.Combine(outputAssemblyDir, targetResourceName);
                     
                     // check if it is a .baml, case-insensitive
-                    if (string.Compare(extension, ".baml", true, CultureInfo.InvariantCulture) == 0)
+                    if (extension.Equals(".baml", StringComparison.OrdinalIgnoreCase))
                     {
                         // try to localized the the baml
                         // find the resource dictionary
@@ -469,26 +468,15 @@ namespace BamlLocalization
 
         private static string GetAssemblyModuleLocalName(LocBamlOptions options, string targetAssemblyName)
         {
-            string moduleName;
-            if (targetAssemblyName.ToLower(CultureInfo.InvariantCulture).EndsWith(".resources.dll"))                
+            ReadOnlySpan<char> finalAssemblyName = targetAssemblyName.AsSpan();
+            if (finalAssemblyName.EndsWith(".resources.dll", StringComparison.OrdinalIgnoreCase))
             {
                 // we create the satellite assembly name
-                moduleName = string.Format(
-                    CultureInfo.InvariantCulture,
-                    "{0}.{1}.{2}", 
-                    targetAssemblyName.Substring(0, targetAssemblyName.Length - ".resources.dll".Length),
-                    options.CultureInfo.Name,
-                    "resources.dll"
-                    );               
+                return $"{finalAssemblyName.Slice(0, finalAssemblyName.Length - ".resources.dll".Length)}.{options.CultureInfo.Name}.resources.dll";              
             }
-            else
-            {
-                moduleName = targetAssemblyName;
-            }
-            return moduleName;
+
+            return targetAssemblyName;
         }
-
-
 
         // return the neutral resource name
         private static string GetNeutralResModuleName(string resourceName, CultureInfo cultureInfo)
