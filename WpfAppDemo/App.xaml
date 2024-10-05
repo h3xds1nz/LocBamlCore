@@ -4,10 +4,6 @@
              xmlns:local="clr-namespace:WpfAppDemo"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="LocalizationDictionary.xaml" />
-            </ResourceDictionary.MergedDictionaries>
-        </ResourceDictionary>
+
     </Application.Resources>
 </Application>

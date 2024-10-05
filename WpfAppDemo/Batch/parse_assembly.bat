@@ -1,3 +1,3 @@
-LocBaml /parse en-US/WpfAppDemo.resources.dll /out:test.csv
+LocBamlCore /parse en-US/WpfAppDemo.resources.dll /out:ExtractedUIDs.csv /asmpath:WpfAppDemo.dll
 
 pause

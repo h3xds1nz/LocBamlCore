@@ -1,3 +1,7 @@
+// Created 4th Oct 2024
+// Amended 6th Oct 2024
+// by h3xds1nz
+
 using System.Resources;
 using System.Windows;
 
@@ -9,5 +13,5 @@ using System.Windows;
                                                 //(used if a resource is not found in the page,
                                                 // app, or any theme specific resource dictionaries)
 )]
-[assembly: NeutralResourcesLanguage("en-US",
-           UltimateResourceFallbackLocation.Satellite)]
+
+[assembly: NeutralResourcesLanguage("en-US", UltimateResourceFallbackLocation.Satellite)]

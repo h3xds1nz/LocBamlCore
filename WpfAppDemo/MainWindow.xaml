@@ -8,6 +8,5 @@
         Title="MainWindow" Height="450" Width="800">
     <Grid>
         <Button x:Uid="testButton" Width="200" Height="24" Content="This shall be localized!" />
-
     </Grid>
 </Window>
