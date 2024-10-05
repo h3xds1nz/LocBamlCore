@@ -29,29 +29,24 @@ namespace BamlLocalization
         /// </summary>        
         internal InputBamlStreamList(LocBamlOptions options)
         {
-            _bamlStreams  = new ArrayList();
-            switch(options.InputType)
+            _bamlStreams = new ArrayList();
+            switch (options.InputType)
             {
                 case FileType.BAML:
                 {
-                    _bamlStreams.Add(
-                        new BamlStream(
-                            Path.GetFileName(options.Input),
-                            File.OpenRead(options.Input)
-                            )
-                    );
+                    _bamlStreams.Add(new BamlStream(Path.GetFileName(options.Input), File.OpenRead(options.Input)));
                     break;
                 }
                 case FileType.RESOURCES:
                 {
-                    using (ResourceReader resourceReader = new ResourceReader(options.Input))
+                    using (ResourceReader resourceReader = new(options.Input))
                     {
                         // enumerate all bamls in a resources
                         EnumerateBamlInResources(resourceReader, options.Input);
                     }
                     break;
                 }
-		case FileType.EXE:
+		        case FileType.EXE:
                 case FileType.DLL:
                 {
                     // for a dll, it is the same idea
@@ -67,7 +62,7 @@ namespace BamlLocalization
                         }
  
                         Stream resourceStream = assembly.GetManifestResourceStream(resourceName);
-                        using (ResourceReader reader = new ResourceReader(resourceStream))
+                        using (ResourceReader reader = new(resourceStream))
                         {
                             EnumerateBamlInResources(reader, resourceName);                              
                         }
@@ -88,7 +83,7 @@ namespace BamlLocalization
         /// </summary>
         internal int Count
         {
-            get{return _bamlStreams.Count;}
+            get => _bamlStreams.Count;
         }
 
         /// <summary>
@@ -96,7 +91,7 @@ namespace BamlLocalization
         /// </summary>        
         internal BamlStream this[int i]
         {
-            get { return (BamlStream) _bamlStreams[i];}
+            get => (BamlStream)_bamlStreams[i];
         }
 
         /// <summary>
@@ -106,7 +101,7 @@ namespace BamlLocalization
         {
             for (int i = 0; i < _bamlStreams.Count; i++)
             {
-               ((BamlStream) _bamlStreams[i]).Close();
+               ((BamlStream)_bamlStreams[i]).Close();
             }            
         }
 
@@ -123,17 +118,12 @@ namespace BamlLocalization
                 string name = entry.Key as string;
                 if (BamlStream.IsResourceEntryBamlStream(name, entry.Value))
                 {    
-                    _bamlStreams.Add( 
-                        new BamlStream(
-                            BamlStream.CombineBamlStreamName(resourceName, name),
-                            (Stream) entry.Value
-                        )
-                    );
+                    _bamlStreams.Add(new BamlStream(BamlStream.CombineBamlStreamName(resourceName, name), (Stream)entry.Value));
                 }    
             }
         }
-        
-        ArrayList    _bamlStreams;
+
+        private readonly ArrayList _bamlStreams;
     }
 
     /// <summary>
