@@ -1,9 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net472</TargetFramework>
+    <TargetFramework>net9.0-windows</TargetFramework>
     <TargetType>exe</TargetType>
+	<OutputType>exe</OutputType>
+	<LangVersion>preview</LangVersion>
     <UseWPF>true</UseWPF>
+	  
    </PropertyGroup>
 
    <ItemGroup>
