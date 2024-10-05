@@ -21,6 +21,10 @@ using System.Resources;
 using System.Threading; 
 using System.Windows.Threading;
 using System.Windows.Markup.Localizer;
+using System.Reflection.Metadata.Ecma335;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
+using System.Net.Security;
 
 namespace BamlLocalization
 {
@@ -130,15 +134,10 @@ namespace BamlLocalization
                 }
 
                 // create a localizabilty resolver based on reflection
-                BamlLocalizabilityByReflection localizabilityReflector =
-                    new BamlLocalizabilityByReflection(options.Assemblies); 
+                BamlLocalizabilityByReflection localizabilityReflector = new(options.Assemblies); 
 
                 // create baml localizer
-                BamlLocalizer mgr = new BamlLocalizer(
-                    input,
-                    localizabilityReflector,
-                    commentStream
-                    );
+                BamlLocalizer mgr = new(input, localizabilityReflector, commentStream);
 
                 // get the resources
                 BamlLocalizationDictionary source = mgr.ExtractResources();
@@ -148,9 +147,7 @@ namespace BamlLocalization
                 {
                     BamlLocalizableResourceKey key = (BamlLocalizableResourceKey) entry.Key;
                     // filter out unchanged items
-                    if (!source.Contains(key)
-                      || entry.Value == null
-                      || source[key].Content != ((BamlLocalizableResource)entry.Value).Content)
+                    if (!source.Contains(key) || entry.Value == null || source[key].Content != ((BamlLocalizableResource)entry.Value).Content)
                     {
                         translations.Add(key, (BamlLocalizableResource)entry.Value);
                     }
@@ -234,8 +231,8 @@ namespace BamlLocalization
                             MemoryStream targetStream = new(buffer);
                             resourceStream.ReadExactly(buffer);
 
-			    resourceValue = targetStream;
-                        }                        
+                            resourceValue = targetStream;
+                        }
                     }                
                 }
 
@@ -289,17 +286,15 @@ namespace BamlLocalization
             targetAssemblyNameObj.CultureInfo = options.CultureInfo;
 
             // we get a assembly builder
-            AssemblyBuilder targetAssemblyBuilder = Thread.GetDomain().DefineDynamicAssembly(
-                targetAssemblyNameObj,                  // name of the assembly
-                AssemblyBuilderAccess.RunAndSave,       // access rights
-                outputAssemblyDir                       // storage dir
-                );            
+            MetadataBuilder metadataBuilder = new();
+            metadataBuilder.AddAssembly(metadataBuilder.GetOrAddString(targetAssemblyNameObj.Name), targetAssemblyNameObj.Version,
+                                        metadataBuilder.GetOrAddString(targetAssemblyNameObj.CultureName), default, 0, AssemblyHashAlgorithm.None);
 
-            // we create a module builder for embeded resource modules
-            ModuleBuilder moduleBuilder = targetAssemblyBuilder.DefineDynamicModule(
-                moduleLocalName,
-                outputAssemblyLocalName
-                );
+            // we create a module builder for embedded resource modules
+            metadataBuilder.AddModule(0, metadataBuilder.GetOrAddString(moduleLocalName), metadataBuilder.GetOrAddGuid(new Guid()), default, default);
+
+            // Create a resource blob where we will store all our resources
+            BlobBuilder resourceBlob = new BlobBuilder(4096);
 
             options.WriteLine(StringLoader.Get("GenerateAssembly"));
                       
@@ -309,7 +304,7 @@ namespace BamlLocalization
                 // get the resource location for the resource
                 ResourceLocation resourceLocation = srcAsm.GetManifestResourceInfo(resourceName).ResourceLocation;
                                
-                // if this resource is in another assemlby, we will skip it
+                // if this resource is in another assembly, we will skip it
                 if ((resourceLocation & ResourceLocation.ContainedInAnotherAssembly) != 0)
                 {
                     continue;   // in resource assembly, we don't have resource that is contained in another assembly
@@ -329,26 +324,20 @@ namespace BamlLocalization
                 {                                   
                     // now we think we have resource stream 
                     // get the resource writer
-                    ResourceWriter writer;
+                    MemoryStream stream = new MemoryStream();
+                    ResourceWriter writer = new ResourceWriter(stream);
                     // check if it is a embeded assembly
+                    // TODO: Figure out whether we need this check in .NET Core and what should we do differently
                     if ((resourceLocation & ResourceLocation.Embedded) != 0)
                     {
-                        // gets the resource writer from the module builder
-                        writer = moduleBuilder.DefineResource(
-                            targetResourceName,         // resource name
-                            targetResourceName,         // resource description
-                            ResourceAttributes.Public   // visibilty of this resource to other assembly
-                            );
+                        // Define resource ahead of time, this will spare us from having to calculate the offset
+                        // OLD COMMENT: gets the resource writer from the module builder
+                        metadataBuilder.AddManifestResource(ManifestResourceAttributes.Public, metadataBuilder.GetOrAddString(targetResourceName), default, (uint)resourceBlob.Count);
                     }                                
                     else
                     {
-                        // it is a standalone resource, we get the resource writer from the assembly builder
-                        writer =  targetAssemblyBuilder.DefineResource(
-                            targetResourceName,         // resource name 
-                            targetResourceName,         // description
-                            targetResourceName,         // file name to save to   
-                            ResourceAttributes.Public   // visibility of this resource to other assembly
-                        );
+                        // OLD COMMENT: it is a standalone resource, we get the resource writer from the assembly builder
+                        metadataBuilder.AddManifestResource(ManifestResourceAttributes.Public, metadataBuilder.GetOrAddString(targetResourceName), default, (uint)resourceBlob.Count);
                     }
 
                     // get the resource reader
@@ -357,10 +346,21 @@ namespace BamlLocalization
                     // generate the resources
                     GenerateResourceStream(options, resourceName, reader, writer, dictionaries);
 
-                    // we don't call writer.Generate() or writer.Close() here 
-                    // because the AssemblyBuilder will call them when we call Save() on it.
+                    // make sure this has been flushed
+                    writer.Generate();
+
+                    // Length is 4 bytes long, int only (2GB)
+                    Debug.Assert(stream.Length <= int.MaxValue);
+
+                    // You always prepend with length due to the alignment
+                    resourceBlob.WriteInt32((int)stream.Length);
+                    resourceBlob.WriteBytes(stream.ToArray());
+
+                    // That's what roslyn does
+                    resourceBlob.Align(8);
+                    writer.Close();
                 }
-                else
+                else // TODO: This whole thing should just write into resourceBlob since there's no AddResourceFile in .NET
                 {
                     // else it is a stand alone untyped manifest resources.
                     ReadOnlySpan<char> extension = Path.GetExtension(targetResourceName.AsSpan());                    
@@ -399,17 +399,27 @@ namespace BamlLocalization
                     }
     
                     // now add this resource file into the assembly
-                    targetAssemblyBuilder.AddResourceFile(
-                        targetResourceName,           // resource name
-                        targetResourceName,           // file name
-                        ResourceAttributes.Public     // visibility of the resource to other assembly
-                    );
+                    // NOTE: See TODO at the top of this statement
+                    //targetAssemblyBuilder.AddResourceFile(
+                    //    targetResourceName,           // resource name
+                    //    targetResourceName,           // file name
+                    //    ResourceAttributes.Public     // visibility of the resource to other assembly
+                    //);
                     
                 }  
             }
 
             // at the end, generate the assembly
-            targetAssemblyBuilder.Save(outputAssemblyLocalName);
+
+            PEHeaderBuilder peHeaderBuilder = new(imageCharacteristics: Characteristics.ExecutableImage | Characteristics.Dll, subsystem: Subsystem.WindowsGui);
+            ManagedPEBuilder peBuilder = new(peHeaderBuilder, new MetadataRootBuilder(metadataBuilder), new BlobBuilder(), managedResources: resourceBlob);
+
+            BlobBuilder blob = new();
+            peBuilder.Serialize(blob);
+
+            using (FileStream fileStream = new(outputAssemblyLocalName, FileMode.Create, FileAccess.Write))
+                blob.WriteContentTo(fileStream);
+
             options.WriteLine(StringLoader.Get("DoneGeneratingAssembly"));
         }
 
