@@ -213,7 +213,7 @@ namespace BamlLocalization
 
         private static void PrintLogo(LocBamlOptions? option)
         {
-            if (!option?.HasNoLogo ?? false)
+            if (!option?.HasNoLogo ?? true)
             {               
                 Console.WriteLine(StringTable.Get("Msg_Copyright", GetAssemblyVersion()));
             }
