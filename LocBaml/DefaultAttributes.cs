@@ -2,9 +2,12 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
-using System.Windows;
+// Modified 5th Oct 2024
+// by h3xds1nz
+
 using System.Collections.Generic;
+using System.Windows;
+using System;
 
 namespace BamlLocalization
 {

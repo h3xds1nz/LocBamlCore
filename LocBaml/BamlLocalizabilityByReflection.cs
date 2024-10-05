@@ -2,25 +2,21 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-//---------------------------------------------------------------------------
-//
-// Description: BamlLocalizabilityResolver class
-//              It resolves localizabilities of a class/element 
-//
-//---------------------------------------------------------------------------
+// Modified 5th Oct 2024
+// by h3xds1nz
 
-using System;
-using System.Windows;
 using System.Windows.Markup.Localizer;
-using System.Diagnostics;
-using System.Globalization;
-using System.Reflection;
 using System.Collections.Generic;
-using System.Security.Permissions;
+using System.Globalization;
+using System.Diagnostics;
+using System.Reflection;
+using System.Windows;
+using System;
 
 namespace BamlLocalization
 {
     /// <summary>
+    /// BamlLocalizabilityResolver class, it resolves localizabilities of a class/element.
     /// </summary>
     public sealed class BamlLocalizabilityByReflection : BamlLocalizabilityResolver
     {      
@@ -48,7 +44,7 @@ namespace BamlLocalization
             }           
 
             // create the cache for Type here
-            _typeCache = new Dictionary<string, Type>(32);
+            _typeCache = new Dictionary<string, Type?>(32);
         }        
 
         /// <summary>
@@ -56,9 +52,9 @@ namespace BamlLocalization
         /// </summary>
         public override ElementLocalizability GetElementLocalizability(string assembly, string className)
         {
-            ElementLocalizability loc = new ElementLocalizability();
+            ElementLocalizability loc = new();
 
-            Type type = GetType(assembly, className);            
+            Type? type = GetType(assembly, className);            
             if (type != null)
             {
                 // We found the type, now try to get the localizability attribte from the type
@@ -78,18 +74,18 @@ namespace BamlLocalization
         /// <summary>
         /// return localizability of a property to the BamlLocalizer
         /// </summary>
-        public override LocalizabilityAttribute GetPropertyLocalizability(string assembly, string className, string property)
+        public override LocalizabilityAttribute? GetPropertyLocalizability(string assembly, string className, string property)
         {
-            LocalizabilityAttribute attribute = null;
+            LocalizabilityAttribute? attribute = null;
 
-            Type type = GetType(assembly, className);        
+            Type? type = GetType(assembly, className);        
             if (type != null)
             {
                 // type of the property. The type can be retrieved from CLR property, or Attached property.
-                Type attachedPropertyType = null;
+                Type? attachedPropertyType = null;
 
                 // we found the type. try to get to the property as Clr property                    
-                GetLocalizabilityForClrProperty(property, type, out attribute, out Type clrPropertyType);
+                GetLocalizabilityForClrProperty(property, type, out attribute, out Type? clrPropertyType);
 
                 if (attribute == null)
                 {
@@ -109,7 +105,7 @@ namespace BamlLocalization
         /// <summary>
         /// Resolve a formatting tag back to the actual class name
         /// </summary>
-        public override string ResolveFormattingTagToClass(string formattingTag)
+        public override string? ResolveFormattingTagToClass(string formattingTag)
         {
             int index = Array.IndexOf(FormattingTag, formattingTag);
             if (index >= 0)
@@ -121,7 +117,7 @@ namespace BamlLocalization
         /// <summary>
         /// Resolve a class name back to its containing assembly 
         /// </summary>
-        public override string ResolveAssemblyFromClass(string className)
+        public override string? ResolveAssemblyFromClass(string className)
         {
             // search through the well-known assemblies
             for (int i = 0; i < _wellKnownAssemblies.Length; i++)
@@ -156,24 +152,24 @@ namespace BamlLocalization
         // Private methods
         //-----------------------------------------------
         // get the type in a specified assembly
-        private Type GetType(string assemblyName, string className)
+        private Type? GetType(string assemblyName, string className)
         {
             Debug.Assert(className != null, "classname can't be null");
             Debug.Assert(assemblyName != null, "Assembly name can't be null");
 
             // combine assembly name and class name for unique indexing
             string fullName = assemblyName + ":" + className;
-            Type type;
+            Type? type;
 
-            if (_typeCache.TryGetValue(fullName, out Type value))
+            if (_typeCache.TryGetValue(fullName, out Type? value))
             {
                 // we found it in the cache, so just return
                 return value;
             }            
 
             // we didn't find it in the table. So let's get to the assembly first
-            Assembly assembly = null;
-            if (_assemblies is not null && _assemblies.TryGetValue(assemblyName, out Assembly tempValue))
+            Assembly? assembly = null;
+            if (_assemblies is not null && _assemblies.TryGetValue(assemblyName, out Assembly? tempValue))
             {
                 // find the assembly in the hash table first
                 assembly = tempValue;
@@ -227,7 +223,7 @@ namespace BamlLocalization
 
         private static string GetCompatibleAssemblyName(string shortName)
         {
-            AssemblyName asmName = null;
+            AssemblyName? asmName = null;
             for (int i = 0; i < _wellKnownAssemblies.Length; i++)
             {                
                 if (_wellKnownAssemblies[i] != null)
@@ -255,41 +251,35 @@ namespace BamlLocalization
         /// <summary>
         /// gets the localizabiity attribute of a given the type
         /// </summary>        
-        private static LocalizabilityAttribute GetLocalizabilityFromType(Type type)
+        private static LocalizabilityAttribute? GetLocalizabilityFromType(Type? type)
         {                 
-           if (type == null)
+            if (type == null)
                 return null;
-           
-           // let's get to its localizability attribute.
-           object[] locAttributes = type.GetCustomAttributes(
-               TypeOfLocalizabilityAttribute, // type of localizability
-               true                           // search for inherited value
-               );
-                    
-           if (locAttributes.Length == 0)
-           {
-               return DefaultAttributes.GetDefaultAttribute(type);
-           }                    
-           else                
-           {
-               Debug.Assert(locAttributes.Length == 1, "Should have only 1 localizability attribute");
-                   
-               // use the one defined on the class
-               return (LocalizabilityAttribute) locAttributes[0];
-           }         
-               
-        }
 
+            // inherit: true means we search in the base class as well
+            object[] locAttributes = type.GetCustomAttributes(TypeOfLocalizabilityAttribute, true);                
+            if (locAttributes.Length == 0)
+            {
+                return DefaultAttributes.GetDefaultAttribute(type);
+            }                    
+            else                
+            {
+                Debug.Assert(locAttributes.Length == 1, "Should have only 1 localizability attribute");
+                   
+                // use the one defined on the class
+                return (LocalizabilityAttribute) locAttributes[0];
+            }                     
+        }
 
         /// <summary>
         /// Get the localizability of a CLR property
         /// </summary>
-        private static void GetLocalizabilityForClrProperty(string propertyName, Type owner, out LocalizabilityAttribute localizability, out Type propertyType)
+        private static void GetLocalizabilityForClrProperty(string propertyName, Type owner, out LocalizabilityAttribute? localizability, out Type? propertyType)
         {
             localizability = null;
             propertyType   = null;
             
-            PropertyInfo info = owner.GetProperty(propertyName);
+            PropertyInfo? info = owner.GetProperty(propertyName);
             if (info == null)
             {
                 return; // couldn't find the Clr property
@@ -298,11 +288,8 @@ namespace BamlLocalization
             // we found the CLR property, set the type of the property
             propertyType = info.PropertyType;
 
-            object[] locAttributes = info.GetCustomAttributes(
-                TypeOfLocalizabilityAttribute, // type of the attribute
-                true                    // search in base class
-            );
-
+            // inherit: true means we search in the base class as well
+            object[] locAttributes = info.GetCustomAttributes(TypeOfLocalizabilityAttribute, inherit: true);
             if (locAttributes.Length == 0)
             {
                 return;
@@ -323,14 +310,14 @@ namespace BamlLocalization
         /// <param name="owner">owner type</param>
         /// <param name="localizability">out: localizability attribute</param>
         /// <param name="propertyType">out: type of the property</param>
-        private static void GetLocalizabilityForAttachedProperty(string propertyName, Type owner, out LocalizabilityAttribute localizability, out Type propertyType)
+        private static void GetLocalizabilityForAttachedProperty(string propertyName, Type owner, out LocalizabilityAttribute? localizability, out Type? propertyType)
         {
             localizability = null;
             propertyType   = null;
         
             // if it is an attached property, it should have a dependency property with the name 
             // <attached proeprty's name> + "Property"
-            DependencyProperty attachedDp = DependencyPropertyFromName(propertyName, owner);
+            DependencyProperty? attachedDp = DependencyPropertyFromName(propertyName, owner);
                        
             if (attachedDp == null)
                 return;  // couldn't find the dp.
@@ -338,18 +325,15 @@ namespace BamlLocalization
             // we found the Dp, set the type of the property
             propertyType = attachedDp.PropertyType;
 
-            FieldInfo fieldInfo = attachedDp.OwnerType.GetField(
+            FieldInfo? fieldInfo = attachedDp.OwnerType.GetField(
                 attachedDp.Name + "Property", 
                 BindingFlags.Public | BindingFlags.NonPublic | 
                 BindingFlags.Static | BindingFlags.FlattenHierarchy);
 
-            Debug.Assert(fieldInfo != null);           
-            
-            object[] attributes = fieldInfo.GetCustomAttributes(
-                TypeOfLocalizabilityAttribute, // type of localizability
-                true
-                );                // inherit
-                
+            Debug.Assert(fieldInfo != null);
+
+            // inherit: true means we search in the base class as well
+            object[] attributes = fieldInfo.GetCustomAttributes(TypeOfLocalizabilityAttribute, inherit: true);                
             if (attributes.Length == 0)
             {
                 // didn't find it.
@@ -362,9 +346,9 @@ namespace BamlLocalization
             }                       
         }
 
-        private static DependencyProperty DependencyPropertyFromName(string propertyName, Type propertyType)
+        private static DependencyProperty? DependencyPropertyFromName(string propertyName, Type propertyType)
         {
-            FieldInfo fi = propertyType.GetField(propertyName + "Property", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
+            FieldInfo? fi = propertyType.GetField(propertyName + "Property", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
             return fi is not null ? fi.GetValue(null) as DependencyProperty : null;
         }
 
@@ -372,7 +356,7 @@ namespace BamlLocalization
         // private members
         //---------------------------     
         private readonly Dictionary<string, Assembly> _assemblies;   // the _assemblies table
-        private readonly Dictionary<string, Type>     _typeCache;    // the types cache
+        private readonly Dictionary<string, Type?>     _typeCache;   // the types cache
         
         // well know assembly names, keep them sorted.
         private static readonly string[] _wellKnownAssemblyNames = new string[] { 

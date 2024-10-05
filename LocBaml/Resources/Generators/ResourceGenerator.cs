@@ -2,34 +2,25 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-//---------------------------------------------------------------------------
-//
-// Description: ResourceGenerator class
-//              It generates the localized baml from translations
-//
-//---------------------------------------------------------------------------
-using System;
-using System.IO;
-using System.Windows;
+// Modified 5th Oct 2024
+// by h3xds1nz
+
+using System.Reflection.PortableExecutable;
+using System.Reflection.Metadata.Ecma335;
+using System.Windows.Markup.Localizer;
+using System.Reflection.Metadata;
 using System.Globalization;
-using System.Runtime.InteropServices;
+using System.Diagnostics;
 using System.Collections;
 using System.Reflection;
-using System.Reflection.Emit;
-using System.Diagnostics;
 using System.Resources;
-using System.Threading;
-using System.Windows.Threading;
-using System.Windows.Markup.Localizer;
-using System.Reflection.Metadata.Ecma335;
-using System.Reflection.Metadata;
-using System.Reflection.PortableExecutable;
-using System.Net.Security;
+using System.IO;
+using System;
 
 namespace BamlLocalization.Resources
 {
     /// <summary>
-    /// ResourceGenerator class
+    /// ResourceGenerator class, it generates the localized baml from translations.
     /// </summary>
     internal static class ResourceGenerator
     {

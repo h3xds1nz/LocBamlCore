@@ -183,9 +183,8 @@ namespace BamlLocalization
                     {
                         options.CultureInfo = new CultureInfo(commandLineOption.Value);
                     }
-                    catch (ArgumentException e)
+                    catch (ArgumentException e) // And that's how we find out the culture was not valid
                     {
-                        // Error
                         errorMessage = e.Message;
                         return;
                     }

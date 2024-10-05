@@ -19,10 +19,10 @@ namespace BamlLocalization
     /// </summary>
     internal sealed class LocBamlOptions
     {
-        internal string Input;
-        internal string Output;
-        internal CultureInfo CultureInfo;
-        internal string Translations;
+        internal string? Input;
+        internal string? Output;
+        internal CultureInfo? CultureInfo;
+        internal string? Translations;
         internal bool ToParse;
         internal bool ToGenerate;
         internal bool HasNoLogo;
