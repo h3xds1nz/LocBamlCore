@@ -476,19 +476,4 @@ namespace BamlLocalization
             }
         }
     }
-    
-    /// <summary>
-    /// File type, recognized using extension.
-    /// </summary>
-    internal enum FileType
-    {
-        NONE = 0,
-        BAML = 1,
-        RESOURCES = 2,
-        DLL = 3,
-        CSV = 4,
-        TXT = 5,
-        EXE = 6,
-    }
-
 }
