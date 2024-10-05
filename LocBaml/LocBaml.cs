@@ -155,9 +155,7 @@ namespace BamlLocalization
 
             options.Input    = commandLine.GetNextArg();
 
-            Option commandLineOption;
-
-            while ( (commandLineOption = commandLine.GetNextOption()) != null)
+            while (commandLine.GetNextOption() is Option commandLineOption)
             {
                 if (commandLineOption.Name      == "parse")
                 {
