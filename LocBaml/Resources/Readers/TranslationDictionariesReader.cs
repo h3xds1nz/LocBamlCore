@@ -2,12 +2,11 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-// Modified 5th Oct 2024
+// Modified 6th Oct 2024
 // by h3xds1nz
 
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Windows.Markup.Localizer;
+using System.Collections.Generic;
 using System.Windows;
 using System;
 
@@ -16,13 +15,10 @@ namespace BamlLocalization.Resources
     /// <summary>
     /// Reader to read the translations from CSV or tab-separated txt file    
     /// </summary> 
-    internal class TranslationDictionariesReader
+    internal sealed class TranslationDictionariesReader
     {
         // hashtable that maps from baml name to its ResourceDictionary (case-insensitive)
         private readonly Dictionary<string, BamlLocalizationDictionary> _table = new(StringComparer.OrdinalIgnoreCase);
-
-        private static TypeConverter BoolTypeConverter = TypeDescriptor.GetConverter(true);
-        private static TypeConverter StringCatConverter = TypeDescriptor.GetConverter(LocalizationCategory.Text);
 
         /// <summary>
         /// Constructor
@@ -94,13 +90,13 @@ namespace BamlLocalization.Resources
                     resource = new BamlLocalizableResource();
 
                     // field #3: Category
-                    resource.Category = (LocalizationCategory)StringCatConverter.ConvertFrom(categoryString);
+                    resource.Category = Enum.Parse<LocalizationCategory>(categoryString);
 
                     // field #4: Readable
-                    resource.Readable = (bool)BoolTypeConverter.ConvertFrom(reader.GetColumn(3));
+                    resource.Readable = bool.Parse(reader.GetColumn(3).AsSpan().Trim());
 
                     // field #5: Modifiable
-                    resource.Modifiable = (bool)BoolTypeConverter.ConvertFrom(reader.GetColumn(4));
+                    resource.Modifiable = bool.Parse(reader.GetColumn(4).AsSpan().Trim());
 
                     // field #6: Comments
                     resource.Comments = reader.GetColumn(5);
