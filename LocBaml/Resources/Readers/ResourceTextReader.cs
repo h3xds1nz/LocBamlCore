@@ -14,7 +14,7 @@ using System.IO;
 using System.Text;
 using System.Collections.Generic;
 
-namespace BamlLocalization
+namespace BamlLocalization.Resources
 {
     /// <summary>
     /// Reader that reads value from a CSV file or Tab-separated TXT file

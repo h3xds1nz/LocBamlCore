@@ -6,6 +6,7 @@
 // by h3xds1nz
 
 using BamlLocalization.ConsoleSupport;
+using BamlLocalization.Resources;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;

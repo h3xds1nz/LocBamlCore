@@ -26,7 +26,7 @@ using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Net.Security;
 
-namespace BamlLocalization
+namespace BamlLocalization.Resources
 {
     /// <summary>
     /// ResourceGenerator class

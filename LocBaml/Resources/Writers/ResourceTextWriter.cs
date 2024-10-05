@@ -10,7 +10,7 @@ using System.Text;
 using System.IO;
 using System;
 
-namespace BamlLocalization
+namespace BamlLocalization.Resources
 {
     /// <summary>
     /// ResourceTextWriter that writes values to a CSV file or tab-separated TXT file.
