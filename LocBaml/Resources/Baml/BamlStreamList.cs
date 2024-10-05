@@ -7,6 +7,7 @@
 
 using System.Resources.Extensions;
 using System.Collections.Generic;
+using BamlLocalization.Options;
 using System.Collections;
 using System.Diagnostics;
 using System.Reflection;
@@ -24,31 +25,30 @@ namespace BamlLocalization.Resources
         /// <summary>
         /// Enumerates all the .baml streams in the <see cref="LocBamlOptions.Input"/> file.
         /// </summary>        
-        internal BamlStreamList(LocBamlOptions options)
+        internal BamlStreamList(ParseOptions options)
         {
             switch (options.InputType)
             {
                 case FileType.BAML:
-                    {
-                        _bamlStreams.Add(new BamlStream(Path.GetFileName(options.Input), File.OpenRead(options.Input)));
-                        break;
-                    }
+                    _bamlStreams.Add(new BamlStream(Path.GetFileName(options.Input), File.OpenRead(options.Input)));
+                    break;
+
                 case FileType.RESOURCES:
+                    using (DeserializingResourceReader resourceReader = new(options.Input))
                     {
-                        using (DeserializingResourceReader resourceReader = new(options.Input))
-                        {
-                            // enumerate all bamls in a resources
-                            EnumerateBamlInResources(resourceReader, options.Input);
-                        }
-                        break;
+                        // enumerate all bamls in a resources
+                        EnumerateBamlInResources(resourceReader, options.Input);
                     }
+
+                    break;
                 case FileType.EXE or FileType.DLL:
                     {
                         // for a dll, it is the same idea
                         Assembly assembly = Assembly.LoadFrom(options.Input);
                         foreach (string resourceName in assembly.GetManifestResourceNames())
                         {
-                            ResourceLocation resourceLocation = assembly.GetManifestResourceInfo(resourceName).ResourceLocation;
+                            // NOTE: Suppressed because resourceName is valid
+                            ResourceLocation resourceLocation = assembly.GetManifestResourceInfo(resourceName)!.ResourceLocation;
 
                             // if this resource is in another assemlby, we will skip it
                             if ((resourceLocation & ResourceLocation.ContainedInAnotherAssembly) != 0)
@@ -56,7 +56,8 @@ namespace BamlLocalization.Resources
                                 continue;   // in resource assembly, we don't have resource that is contained in another assembly
                             }
 
-                            Stream resourceStream = assembly.GetManifestResourceStream(resourceName);
+                            // NOTE: Suppressed because resourceName is valid
+                            Stream resourceStream = assembly.GetManifestResourceStream(resourceName)!;
                             using (DeserializingResourceReader reader = new(resourceStream))
                             {
                                 EnumerateBamlInResources(reader, resourceName);
@@ -65,11 +66,8 @@ namespace BamlLocalization.Resources
                         break;
                     }
                 default:
-                    {
-
-                        Debug.Assert(false, "Not supported type");
-                        break;
-                    }
+                    Debug.Assert(false, "Unsupported type");
+                    break;
             }
         }
 

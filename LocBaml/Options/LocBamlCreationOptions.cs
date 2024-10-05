@@ -5,6 +5,7 @@
 // Modified 5th Oct 2024
 // by h3xds1nz
 
+using System.Diagnostics.CodeAnalysis;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
@@ -12,33 +13,33 @@ using System.Security;
 using System.IO;
 using System;
 
-namespace BamlLocalization
+namespace BamlLocalization.Options
 {
     /// <summary>
-    /// The class that groups all the BAML options together.
+    /// Very ugly structure that verifies the logic for command-line options.
     /// </summary>
-    internal sealed class LocBamlOptions
+    public struct LocBamlCreationOptions
     {
-        internal string? Input;
-        internal string? Output;
-        internal CultureInfo? CultureInfo;
-        internal string? Translations;
-        internal bool ToParse;
-        internal bool ToGenerate;
-        internal bool HasNoLogo;
-        internal bool IsVerbose;
-        internal FileType TranslationFileType;
-        internal FileType InputType;
-        internal List<string>? AssemblyPaths;
-        internal Assembly[]? Assemblies;
+        public string Input { get; set; }
+        public string Output { get; set; }
+
+        internal CultureInfo CultureInfo { get; set; }
+        internal string? Translations { get; set; }
+        internal bool ToParse { get; set; }
+        internal bool ToGenerate { get; set; }
+        internal bool HasNoLogo { get; set; }
+        internal bool IsVerbose { get; set; }
+        internal FileType TranslationFileType { get; set; }
+        internal FileType InputType { get; set; }
+        internal List<string>? AssemblyPaths { get; set; }
+        internal Assembly[]? Assemblies { get; set; }
 
         /// <summary>
-        /// return true if the operation succeeded otherwise, return false
+        /// Verifies that the options set are consistent and it's okay to create <see cref="LocBamlOptions"/>.
         /// </summary>
-        internal string? CheckAndSetDefault()
+        /// <returns>Outputs an error message in case there was one, otherwise <see langword="null"/>.</returns>
+        public string? VerifyOptions()
         {
-            // we validate the options here and also set default if we can
-
             // Rule #1: One and only one action at a time
             // i.e. Can't parse and generate at the same time; must do only one of them
             if ((ToParse && ToGenerate) || (!ToParse && !ToGenerate))
@@ -46,74 +47,41 @@ namespace BamlLocalization
 
             // Rule #2: Must have an input 
             if (string.IsNullOrEmpty(Input))
-            {
                 return StringLoader.Get("InputFileRequired");
-            }
-            else
-            {
-                if (!File.Exists(Input))
-                {
-                    return StringLoader.Get("FileNotFound", Input);
-                }
 
-                ReadOnlySpan<char> extension = Path.GetExtension(Input.AsSpan());
+            // Rule #2.1: Input must exist
+            if (!File.Exists(Input))
+                return StringLoader.Get("FileNotFound", Input);
 
-                // Get the input file type.
-                if (extension.Equals($".{nameof(FileType.BAML)}", StringComparison.OrdinalIgnoreCase))
-                {
-                    InputType = FileType.BAML;
-                }
-                else if (extension.Equals($".{nameof(FileType.RESOURCES)}", StringComparison.OrdinalIgnoreCase))
-                {
-                    InputType = FileType.RESOURCES;
-                }
-                else if (extension.Equals($".{nameof(FileType.DLL)}", StringComparison.OrdinalIgnoreCase))
-                {
-                    InputType = FileType.DLL;
-                }
-                else if (extension.Equals($".{nameof(FileType.EXE)}", StringComparison.OrdinalIgnoreCase))
-                {
-                    InputType = FileType.EXE;
-                }
-                else
-                {
-                    return StringLoader.Get("FileTypeNotSupported", extension.ToString());
-                }
-            }
+            // Rule #2.2: Input must have a valid file type
+            if (!TryGetFileType(Input, out FileType? inputType))
+                return StringLoader.Get("FileTypeNotSupported", Path.GetExtension(Input));
+
+            // Assign valid file type
+            InputType = inputType.Value;
 
             if (ToGenerate)
             {
-                // Rule #3: before generation, we must have Culture string
-                if (CultureInfo == null && InputType != FileType.BAML)
-                {
-                    // if we are not generating baml, 
+                // Rule #3: before generation, we must have Culture string - unless we generating from baml
+                if (CultureInfo is null && InputType != FileType.BAML)
                     return StringLoader.Get("CultureNameNeeded", InputType.ToString());
-                }
 
                 // Rule #4: before generation, we must have translation file
                 if (string.IsNullOrEmpty(Translations))
-                {
                     return StringLoader.Get("TranslationNeeded");
+
+                // Rule #4.1: Translation file must exist
+                if (!File.Exists(Translations))
+                    return StringLoader.Get("TranslationNotFound", Translations);
+
+                ReadOnlySpan<char> transExtension = Path.GetExtension(Translations.AsSpan());
+                if (transExtension.Equals($".{nameof(FileType.CSV)}", StringComparison.OrdinalIgnoreCase))
+                {
+                    TranslationFileType = FileType.CSV;
                 }
                 else
                 {
-                    ReadOnlySpan<char> extension = Path.GetExtension(Translations.AsSpan());
-
-                    if (!File.Exists(Translations))
-                    {
-                        return StringLoader.Get("TranslationNotFound", Translations);
-                    }
-                    else
-                    {
-                        if (extension.Equals($".{nameof(FileType.CSV)}", StringComparison.OrdinalIgnoreCase))
-                        {
-                            TranslationFileType = FileType.CSV;
-                        }
-                        else
-                        {
-                            TranslationFileType = FileType.TXT;
-                        }
-                    }
+                    TranslationFileType = FileType.TXT;
                 }
             }
 
@@ -165,10 +133,10 @@ namespace BamlLocalization
                     else
                     {
                         // Rule #6.2: if we have file name, check the extension.
-                        ReadOnlySpan<char> extension = Path.GetExtension(Output.AsSpan());
+                        ReadOnlySpan<char> outputExtension = Path.GetExtension(Output.AsSpan());
 
                         // ignore case and invariant culture
-                        if (extension.Equals($".{nameof(FileType.CSV)}", StringComparison.OrdinalIgnoreCase))
+                        if (outputExtension.Equals($".{nameof(FileType.CSV)}", StringComparison.OrdinalIgnoreCase))
                         {
                             TranslationFileType = FileType.CSV;
                         }
@@ -210,25 +178,36 @@ namespace BamlLocalization
         }
 
         /// <summary>
-        /// Write message line depending on IsVerbose flag
+        /// Retrieves <see cref="FileType"/> from <paramref name="input"/>, <see langword="null"/> if we didn't recognize it.
         /// </summary>
-        internal void WriteLine(string? message)
+        private static bool TryGetFileType(ReadOnlySpan<char> input, [NotNullWhen(true)] out FileType? inputType)
         {
-            if (IsVerbose)
-            {
-                Console.WriteLine(message);
-            }
-        }
+            ReadOnlySpan<char> extension = Path.GetExtension(input);
+            inputType = null;
 
-        /// <summary>
-        /// Write the message depending on IsVerbose flag
-        /// </summary>        
-        internal void Write(string? message)
-        {
-            if (IsVerbose)
+            // Get the input file type.
+            if (extension.Equals($".{nameof(FileType.BAML)}", StringComparison.OrdinalIgnoreCase))
             {
-                Console.Write(message);
+                inputType = FileType.BAML;
+                return true;
             }
+            else if (extension.Equals($".{nameof(FileType.RESOURCES)}", StringComparison.OrdinalIgnoreCase))
+            {
+                inputType = FileType.RESOURCES;
+                return true;
+            }
+            else if (extension.Equals($".{nameof(FileType.DLL)}", StringComparison.OrdinalIgnoreCase))
+            {
+                inputType = FileType.DLL;
+                return true;
+            }
+            else if (extension.Equals($".{nameof(FileType.EXE)}", StringComparison.OrdinalIgnoreCase))
+            {
+                inputType = FileType.EXE;
+                return true;
+            }
+
+            return false;
         }
     }
 }

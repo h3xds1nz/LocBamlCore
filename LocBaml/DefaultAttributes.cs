@@ -52,7 +52,7 @@ namespace BamlLocalization
         /// </summary>
         internal static LocalizabilityAttribute GetDefaultAttribute(object type)
         {
-            if (DefinedAttributes.TryGetValue(type, out LocalizabilityAttribute predefinedAttribute))
+            if (DefinedAttributes.TryGetValue(type, out LocalizabilityAttribute? predefinedAttribute))
             {
                 // create a copy of the predefined attribute and return the copy
                 return new LocalizabilityAttribute(predefinedAttribute.Category)

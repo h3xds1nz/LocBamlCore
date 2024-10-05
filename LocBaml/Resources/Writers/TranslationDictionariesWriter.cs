@@ -6,6 +6,7 @@
 // by h3xds1nz
 
 using System.Windows.Markup.Localizer;
+using BamlLocalization.Options;
 using System.Collections;
 using System.Reflection;
 using System.IO;
@@ -22,12 +23,12 @@ namespace BamlLocalization.Resources
         /// Write the localizable key-value pairs
         /// </summary>
         /// <param name="options"></param>
-        internal static void Write(LocBamlOptions options)
+        internal static void Write(ParseOptions options)
         {
             Stream output = new FileStream(options.Output, FileMode.Create);
             BamlStreamList bamlStreamList = new(options);
 
-            using (ResourceTextWriter writer = new(options.TranslationFileType, output))
+            using (ResourceTextWriter writer = new(options.TranslationsTargetType, output))
             {
                 options.WriteLine(StringLoader.Get("WriteBamlValues"));
                 for (int i = 0; i < bamlStreamList.Count; i++)

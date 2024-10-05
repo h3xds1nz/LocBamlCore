@@ -120,9 +120,10 @@ namespace BamlLocalization.Resources
             }
         }
 
-        internal BamlLocalizationDictionary this[string key]
+        // TODO: This should be changed, preferrably just introduce TryGetValue
+        internal BamlLocalizationDictionary? this[string key]
         {
-            get => _table.TryGetValue(key, out BamlLocalizationDictionary dictionary) ? dictionary : null;
+            get => _table.TryGetValue(key, out BamlLocalizationDictionary? dictionary) ? dictionary : null;
             set => _table[key] = value;
         }
     }

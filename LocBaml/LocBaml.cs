@@ -6,8 +6,9 @@
 // by h3xds1nz
 
 using BamlLocalization.ConsoleSupport;
-using BamlLocalization.Resources;
 using System.Collections.Generic;
+using BamlLocalization.Resources;
+using BamlLocalization.Options;
 using System.Globalization;
 using System.Reflection;
 using System.IO;
@@ -64,14 +65,16 @@ namespace BamlLocalization
             try
             {
                 // We can either parse or generate resources
-                if (options.ToParse)
+                if (options is ParseOptions parseOptions)
                 {
-                    ParseBamlResources(options);
+                    ParseBamlResources(parseOptions);
+                }
+                else if (options is GenerateOptions generateOptions)
+                {
+                    GenerateBamlResources(generateOptions);
                 }
                 else
-                {
-                    GenerateBamlResources(options);
-                }
+                    throw new InvalidOperationException("Unknown LocBamlOptions type");
             }
             catch (Exception)                
             {
@@ -90,7 +93,7 @@ namespace BamlLocalization
         /// <summary>
         /// Parse the baml resources given in the command line
         /// </summary>        
-        private static void ParseBamlResources(LocBamlOptions options)
+        private static void ParseBamlResources(ParseOptions options)
         {            
             TranslationDictionariesWriter.Write(options);         
         }
@@ -98,10 +101,10 @@ namespace BamlLocalization
         /// <summary>
         /// Genereate localized baml 
         /// </summary>        
-        private static void GenerateBamlResources(LocBamlOptions options)
+        private static void GenerateBamlResources(GenerateOptions options)
         {   
             Stream input = File.OpenRead(options.Translations);
-            using (ResourceTextReader reader = new(options.TranslationFileType, input))
+            using (ResourceTextReader reader = new(options.TranslationsSourceType, input))
             {   
                 TranslationDictionariesReader dictionaries = new(reader);                                                               
                 ResourceGenerator.Generate(options, dictionaries);
@@ -113,6 +116,9 @@ namespace BamlLocalization
         /// </summary>
         private static void GetCommandLineOptions(string[] args, out LocBamlOptions? options, out string? errorMessage)
         {
+            // This will only be set when we succeeded
+            options = null;
+
             CommandLineParser commandLineParser; 
             try
             {
@@ -121,7 +127,6 @@ namespace BamlLocalization
             catch (ArgumentException e)
             {
                 errorMessage = e.Message;
-                options      = null;
                 return;
             }
 
@@ -129,63 +134,62 @@ namespace BamlLocalization
             {
                 PrintLogo(null);
                 PrintUsage();
-                errorMessage    = null;
-                options         = null;
+                errorMessage = null;
                 return;
             }
 
-            options = new LocBamlOptions() { Input = commandLineParser.GetNextArg() };
+            LocBamlCreationOptions creationOptions  = new() { Input = commandLineParser.GetNextArg() };
             while (commandLineParser.GetNextOption() is CommandLineOption commandLineOption)
             {
                 if (commandLineOption.Name      == "parse")
                 {
-                    options.ToParse = true;
+                    creationOptions.ToParse = true;
                 }
                 else if (commandLineOption.Name == "generate")
                 {
-                    options.ToGenerate = true;
+                    creationOptions.ToGenerate = true;
                 }
                 else if (commandLineOption.Name == "nologo")
                 {
-                    options.HasNoLogo = true;                        
+                    creationOptions.HasNoLogo = true;                        
                 }
                 else if (commandLineOption.Name == "help")
                 {
                     // we print usage and stop processing
                     PrintUsage();
                     errorMessage = null;
-                    options = null;
                     return;
                 }
                 else if (commandLineOption.Name == "verbose")
                 {
-                    options.IsVerbose = true;
+                    creationOptions.IsVerbose = true;
                 }
                     // the following ones need value
                 else if (commandLineOption.Name == "out")
                 {
-                    options.Output = commandLineOption.Value;
+                    creationOptions.Output = commandLineOption.Value;
                 }
                 else if (commandLineOption.Name == "translation")
                 {
-                    options.Translations = commandLineOption.Value;
+                    creationOptions.Translations = commandLineOption.Value;
                 }
                 else if (commandLineOption.Name == "asmpath")
                 {
                     // Lazy initialization, create if NULL
-                    options.AssemblyPaths ??= new List<string>();
+                    creationOptions.AssemblyPaths ??= new List<string>();
 
-                    options.AssemblyPaths.Add(commandLineOption.Value);
+                    creationOptions.AssemblyPaths.Add(commandLineOption.Value);
                 }
                 else if (commandLineOption.Name == "culture")
                 {
                     try
                     {
-                        options.CultureInfo = new CultureInfo(commandLineOption.Value);
+                        creationOptions.CultureInfo = new CultureInfo(commandLineOption.Value);
                     }
                     catch (ArgumentException e) // And that's how we find out the culture was not valid
                     {
                         errorMessage = e.Message;
+                        options = null;
                         return;
                     }
                 }
@@ -193,12 +197,17 @@ namespace BamlLocalization
                 {
                     // something that we don't recognize
                     errorMessage = StringLoader.Get("Err_InvalidOption", commandLineOption.Name);
+                    options = null;
                     return;
                 }
             }
 
             // we passed all the test till here. Now check the combinations of the options
-            errorMessage = options.CheckAndSetDefault();       
+            errorMessage = creationOptions.VerifyOptions();
+
+            // Create options based on whether we're generating or parsing
+            if (errorMessage is null)
+                options = creationOptions.ToGenerate ? new GenerateOptions(creationOptions) : new ParseOptions(creationOptions);
         }
 
         private static void PrintLogo(LocBamlOptions? option)
