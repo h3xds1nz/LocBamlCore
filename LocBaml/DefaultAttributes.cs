@@ -2,12 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-//---------------------------------------------------------------------------
-//
-// Description: LocBaml command line tool. 
-//
-//---------------------------------------------------------------------------
-
 using System;
 using System.Windows;
 using System.Collections.Generic;
@@ -19,18 +13,20 @@ namespace BamlLocalization
     /// </summary>
     internal static class DefaultAttributes
     {
+        /// <summary>
+        /// Stores pre-defined attribute for CLR types
+        /// </summary>
+        private static readonly Dictionary<object, LocalizabilityAttribute> DefinedAttributes;  
+
         static DefaultAttributes()
         {
             // predefined localizability attributes
-            DefinedAttributes = new Dictionary<object, LocalizabilityAttribute>(32);
+            DefinedAttributes = new Dictionary<object, LocalizabilityAttribute>(16);
 
-            // nonlocalizable attribute
-            LocalizabilityAttribute notReadable = new LocalizabilityAttribute(LocalizationCategory.None);
-            notReadable.Readability = Readability.Unreadable;
+            // nonlocalizable attributes
+            LocalizabilityAttribute notReadable = new(LocalizationCategory.None) { Readability = Readability.Unreadable };
+            LocalizabilityAttribute notModifiable = new(LocalizationCategory.None) { Modifiability = Modifiability.Unmodifiable };
 
-            LocalizabilityAttribute notModifiable = new LocalizabilityAttribute(LocalizationCategory.None);
-            notModifiable.Modifiability = Modifiability.Unmodifiable;
-            
             // not localizable CLR types
             DefinedAttributes.Add(typeof(Boolean),   notReadable);
             DefinedAttributes.Add(typeof(Byte),      notReadable);
@@ -53,42 +49,27 @@ namespace BamlLocalization
         /// </summary>
         internal static LocalizabilityAttribute GetDefaultAttribute(object type)
         {
-            if (DefinedAttributes.ContainsKey(type))
+            if (DefinedAttributes.TryGetValue(type, out LocalizabilityAttribute predefinedAttribute))
             {
-                LocalizabilityAttribute predefinedAttribute = DefinedAttributes[type];
-
                 // create a copy of the predefined attribute and return the copy
-                LocalizabilityAttribute result = new LocalizabilityAttribute(predefinedAttribute.Category);
-                result.Readability   = predefinedAttribute.Readability;
-                result.Modifiability = predefinedAttribute.Modifiability;
-                return result;
-            }
-            else
-            {            
-                Type targetType = type as Type;
-                if ( targetType != null && targetType.IsValueType)
+                return new LocalizabilityAttribute(predefinedAttribute.Category)
                 {
-                    // It is looking for the default value of a value type (i.e. struct and enum)
-                    // we use this default.
-                    LocalizabilityAttribute attribute = new LocalizabilityAttribute(LocalizationCategory.Inherit);
-                    attribute.Modifiability           = Modifiability.Unmodifiable;
-                    return attribute;                    
-                }
-                else
-                {    
-                    return DefaultAttribute;
-                }
+                    Readability = predefinedAttribute.Readability,
+                    Modifiability = predefinedAttribute.Modifiability
+                };
             }
-        }
-
-        internal static LocalizabilityAttribute DefaultAttribute
-        {
-            get 
+       
+            if (type is Type targetType && targetType.IsValueType)
             {
-                return new LocalizabilityAttribute(LocalizationCategory.Inherit);
-            }            
-        }   
+                // It is looking for the default value of a value type (i.e. struct and enum) we use this default.
+                return new LocalizabilityAttribute(LocalizationCategory.Inherit)
+                {
+                    Modifiability = Modifiability.Unmodifiable
+                };             
+            }
 
-        private static Dictionary<object, LocalizabilityAttribute> DefinedAttributes;     // stores pre-defined attribute for types
+            // Default Fallback attribute
+            return new LocalizabilityAttribute(LocalizationCategory.Inherit);
+        } 
     }
 }
