@@ -12,10 +12,7 @@
 using System;
 using System.IO;
 using System.Text;
-using System.Resources;
-using System.Collections;
-using System.Globalization;
-using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace BamlLocalization
 {
@@ -45,13 +42,13 @@ namespace BamlLocalization
             }        
             
             ReadState currentState = ReadState.TokenStart;
-            _columns = new ArrayList();            
+            _columns = new List<string>();            
 
             StringBuilder buffer = new StringBuilder();
             
             while (currentState != ReadState.LineEnd)
             {
-                switch(currentState)
+                switch (currentState)
                 {
                     // start of a token
                     case ReadState.TokenStart:                        
@@ -159,9 +156,9 @@ namespace BamlLocalization
         
         internal string GetColumn(int index)
         {
-            if (_columns!= null && index < _columns.Count && index >= 0)
+            if (_columns != null && index < _columns.Count && index >= 0)
             {
-                return (string) _columns[index];
+                return _columns[index];
             }
             else 
             {
@@ -227,9 +224,9 @@ namespace BamlLocalization
         }
         
 
-        private TextReader _reader;     // internal text reader
-        private int        _delimiter;  // delimiter
-        private ArrayList  _columns;    // An arraylist storing all the columns of a row
+        private readonly TextReader _reader;     // internal text reader
+        private readonly int        _delimiter;  // delimiter
+        private List<string>        _columns;    // An arraylist storing all the columns of a row
 
         /// <summary>
         /// Enum representing internal states of the reader when reading 
