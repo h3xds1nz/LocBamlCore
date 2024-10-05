@@ -22,40 +22,28 @@ namespace BamlLocalization
 {
     /// <summary>
     /// </summary>
-    public class BamlLocalizabilityByReflection : BamlLocalizabilityResolver
+    public sealed class BamlLocalizabilityByReflection : BamlLocalizabilityResolver
     {      
         /// Take in an optional list of assemblies in addition to the 
         /// default well-known avalon assemblies. The assemblies will be searched first
         /// in order before the well-known avalon assemblies.
         /// </summary>
         /// <param name="assemblies">additinal list of assemblies to search for Type information</param>
-        public BamlLocalizabilityByReflection(params Assembly[] assemblies)
+        public BamlLocalizabilityByReflection(params ReadOnlySpan<Assembly> assemblies)
         {
-            if (assemblies != null)
+            if (!assemblies.IsEmpty)
             {
                 // create the table
                 _assemblies = new Dictionary<string, Assembly>(assemblies.Length);
-
-                try{
-                    // Assert security permissions
-                    FileIOPermission permobj = new FileIOPermission(PermissionState.None);
-                    permobj.AllFiles = FileIOPermissionAccess.PathDiscovery;
-                    //CASRemoval:permobj.Assert();
-                    
-                    for (int i = 0; i < assemblies.Length; i++)
-                    {
-                        // skip the null ones. 
-                        if (assemblies[i] != null)
-                        {
-                            // index it by the name;
-                            _assemblies[assemblies[i].GetName().FullName] = assemblies[i];
-                        }
-                    }
-                }
-                finally
+     
+                for (int i = 0; i < assemblies.Length; i++)
                 {
-                   // revert assert permission
-                   //CASRemoval:FileIOPermission.RevertAssert();
+                    // skip the null ones. 
+                    if (assemblies[i] != null)
+                    {
+                        // index it by the name;
+                        _assemblies[assemblies[i].FullName] = assemblies[i];
+                    }
                 }
             }           
 
