@@ -129,10 +129,10 @@ namespace BamlLocalization
     /// <summary>
     /// BamlStream class which represents a baml stream
     /// </summary>
-    internal class BamlStream
+    internal sealed class BamlStream
     {
-        private string _name;
-        private Stream _stream;
+        private readonly string _name;
+        private readonly Stream _stream;
 
         /// <summary>
         /// constructor
@@ -147,8 +147,8 @@ namespace BamlLocalization
         /// name of the baml 
         /// </summary>
         internal string Name 
-        { 
-            get { return _name;}
+        {
+            get => _name;
         }
 
         /// <summary>
@@ -156,7 +156,7 @@ namespace BamlLocalization
         /// </summary>
         internal Stream Stream
         {
-            get { return _stream;}
+            get => _stream;
         }
 
         /// <summary>
@@ -164,10 +164,7 @@ namespace BamlLocalization
         /// </summary>
         internal void Close()
         {
-            if (_stream != null)
-            {
-                _stream.Close();
-            }           
+            _stream?.Close();           
         }
 
         /// <summary>
@@ -175,21 +172,16 @@ namespace BamlLocalization
         /// </summary>
         internal static bool IsResourceEntryBamlStream(string name, object value)
         {             
-            string extension = Path.GetExtension(name);
-            if (string.Compare(
-                    extension, 
-                    "." + FileType.BAML.ToString(), 
-                    true, 
-                    CultureInfo.InvariantCulture
-                    ) == 0
-                )                            
+            ReadOnlySpan<char> extension = Path.GetExtension(name.AsSpan());
+            if (extension.Equals($".{nameof(FileType.BAML)}", StringComparison.OrdinalIgnoreCase))                       
             {
-                   //it has .Baml at the end
+                //it has .Baml at the end
                 Type type = value.GetType();
 
                 if (typeof(Stream).IsAssignableFrom(type))
-                return true;
-            }            
+                    return true;
+            }    
+            
             return false;                
         }
 
@@ -201,10 +193,10 @@ namespace BamlLocalization
         {
             Debug.Assert(resource != null && bamlName != null, "Resource name and baml name can't be null");
 
-            string suffix = Path.GetFileName(bamlName);
-            string prefix = Path.GetFileName(resource);
+            ReadOnlySpan<char> suffix = Path.GetFileName(bamlName.AsSpan());
+            ReadOnlySpan<char> prefix = Path.GetFileName(resource.AsSpan());
 
-            return prefix + LocBamlConst.BamlAndResourceSeperator + suffix;
+            return $"{prefix}{LocBamlConst.BamlAndResourceSeperator}{suffix}";
         }
     }
 }
