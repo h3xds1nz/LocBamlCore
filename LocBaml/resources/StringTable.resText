@@ -1,5 +1,5 @@
 Msg_Usage=Syntax: LocBaml [Input] [Options]\r\nInput: .Baml .resource .exe or .dll\r\nOptions:\r\n    <Parsing>\r\n    /parse           parse input file to get localizable resources\r\n    /out[:fileName]  output file name that contains the list of localizable resources\r\n                     It can be .csv file or .txt. Default to .csv file if output file name is not given\r\n    /asmpath[:name]  assembly references where localizability attributes are defined\r\n    Example:         LocBaml.exe /parse Abc.baml /out:c:\\ABC.csv\r\n\r\n    <Generating>\r\n    /generate        generate localized binary\r\n    /tran[:filename] the .csv or .txt that contains list of translations\r\n    /cul[:culture]   culture name\r\n    /out[:dir]       output directory for the localized binaries\r\n    Example:         LocBaml.exe /generate ABC.resources /trans:abc.resources.csv /out:c:\\ /cul:en-US
-Msg_Copyright=Microsoft (R) Baml Localization Utility {0}\r\n
+Msg_Copyright=Microsoft (R) Baml Localization Utility v{0}\r\nModified by h3xds1nz (https://github.com/h3xds1nz) for .NET Core\r\n
 ; Command line parsing error strings.
 Err_AmbigousOption=Ambiguous option: /{0}
 Err_UnknownOption=Unknown option: /{0}

@@ -18,6 +18,7 @@ using System.Security;
 using System.Windows;
 using System.Windows.Threading;
 using System.Collections.Generic;
+using BamlLocalization.ConsoleSupport;
 
 namespace BamlLocalization
 {
@@ -119,10 +120,10 @@ namespace BamlLocalization
         /// </summary>
         private static void GetCommandLineOptions(string[] args, out LocBamlOptions options, out string errorMessage)
         {
-            CommandLine commandLine; 
+            CommandLineParser commandLineParser; 
             try
             {
-                commandLine = new CommandLine(args, s_supportedArguments);
+                commandLineParser = new CommandLineParser(args, s_supportedArguments);
             }            
             catch (ArgumentException e)
             {
@@ -131,7 +132,7 @@ namespace BamlLocalization
                 return;
             }
 
-            if (commandLine.NumArgs + commandLine.NumOpts < 1)
+            if (commandLineParser.ArgumentsCount + commandLineParser.OptionsCount < 1)
             {
                 PrintLogo(null);
                 PrintUsage();
@@ -140,8 +141,8 @@ namespace BamlLocalization
                 return;
             }
 
-            options = new LocBamlOptions() { Input = commandLine.GetNextArg() };
-            while (commandLine.GetNextOption() is Option commandLineOption)
+            options = new LocBamlOptions() { Input = commandLineParser.GetNextArg() };
+            while (commandLineParser.GetNextOption() is CommandLineOption commandLineOption)
             {
                 if (commandLineOption.Name      == "parse")
                 {
