@@ -10,7 +10,6 @@
 
 using System;
 using System.IO;
-using System.Collections;
 using System.Globalization;
 using System.Diagnostics;
 using System.Threading;
@@ -27,19 +26,28 @@ namespace BamlLocalization
     /// </summary>
     public static class LocBaml
     {
+        // Private fields/constants
         private const int ErrorCode = 100;        
         private const int SuccessCode = 0;
         private static Dispatcher _dispatcher;
 
-        //----------------------------------
-        // Main
-        //----------------------------------
-        [System.STAThread()]
+        // Supported command line options
+        // NOTE: "*" prefix means the option must have a value; options without "*" means the option can't have a value 
+        private static readonly string[] s_supportedArguments = ["parse",        // /parse           for update
+                                                                 "generate",     // /generate        for generate
+                                                                 "*out",         // /out             for output .csv|.txt when parsing, for output directory when generating
+                                                                 "*culture",     // /culture         for culture name
+                                                                 "*translation", // /translation     for translation file, .csv|.txt
+                                                                 "*asmpath",     // /asmpath         for assembly path to look for references
+                                                                 "nologo",       // /nologo          for not to print logo      
+                                                                 "help",         // /help            for help
+                                                                 "verbose"];     // /verbose         for verbose output
+
+        [STAThread]
         public static int Main(string[] args)
         {
-            LocBamlOptions options;
-            string errorMessage;
-            GetCommandLineOptions(args, out options, out errorMessage);
+
+            GetCommandLineOptions(args, out LocBamlOptions options, out string errorMessage);
 
             if (errorMessage != null)
             {
@@ -88,11 +96,6 @@ namespace BamlLocalization
         
         }        
 
-         #region Private static methods
-        //---------------------------------------------
-        // Private static methods
-        //---------------------------------------------
-
         /// <summary>
         /// Parse the baml resources given in the command line
         /// </summary>        
@@ -120,28 +123,16 @@ namespace BamlLocalization
         private static void GetCommandLineOptions(string[] args, out LocBamlOptions options, out string errorMessage)
         {
             CommandLine commandLine; 
-            try{
-                // "*" means the option must have a value. no "*" means the option can't have a value 
-                 commandLine = new CommandLine(args, 
-                                    new string[]{
-                                            "parse",        // /parse for update
-                                            "generate",     // /generate     for generate
-                                            "*out",         // /out          for output .csv|.txt when parsing, for output directory when generating
-                                            "*culture",     // /culture      for culture name
-                                            "*translation", // /translation  for translation file, .csv|.txt
-                                            "*asmpath",     // /asmpath,     for assembly path to look for references   (
-                                            "nologo",       // /nologo       for not to print logo      
-                                            "help",         // /help         for help
-                                            "verbose"       // /verbose      for verbose output         
-                                        }                
-                                     );
-           }            
-           catch (ArgumentException e)
-           {
-               errorMessage = e.Message;
-               options      = null;
-               return;
-           }
+            try
+            {
+                commandLine = new CommandLine(args, s_supportedArguments);
+            }            
+            catch (ArgumentException e)
+            {
+                errorMessage = e.Message;
+                options      = null;
+                return;
+            }
 
             if (commandLine.NumArgs + commandLine.NumOpts < 1)
             {
@@ -152,10 +143,7 @@ namespace BamlLocalization
                 return;
             }
 
-            options = new LocBamlOptions();
-
-            options.Input    = commandLine.GetNextArg();
-
+            options = new LocBamlOptions() { Input = commandLine.GetNextArg() };
             while (commandLine.GetNextOption() is Option commandLineOption)
             {
                 if (commandLineOption.Name      == "parse")
@@ -193,10 +181,8 @@ namespace BamlLocalization
                 }
                 else if (commandLineOption.Name == "asmpath")
                 {
-                    if (options.AssemblyPaths == null)
-                    {
-                        options.AssemblyPaths = new List<string>();
-                    }
+                    // Lazy initialization, create if NULL
+                    options.AssemblyPaths ??= new List<string>();
 
                     options.AssemblyPaths.Add(commandLineOption.Value);
                 }
@@ -238,20 +224,13 @@ namespace BamlLocalization
             Console.WriteLine(StringLoader.Get("Msg_Usage"));
         }         
 
-
         private static string GetAssemblyVersion()
         {
             Assembly currentAssembly = Assembly.GetExecutingAssembly();                                   
             return currentAssembly.GetName().Version.ToString(4);
         }
-        
-         #endregion
     }
 
-
-
-
-    #region LocBamlOptions
     // the class that groups all the baml options together
     internal sealed class LocBamlOptions
     {    
@@ -498,18 +477,18 @@ namespace BamlLocalization
         }
     }
     
+    /// <summary>
+    /// File type, recognized using extension.
+    /// </summary>
     internal enum FileType
     {
         NONE = 0,
-        BAML,
-        RESOURCES,
-        DLL,
-        CSV,
-        TXT,
-        EXE,
+        BAML = 1,
+        RESOURCES = 2,
+        DLL = 3,
+        CSV = 4,
+        TXT = 5,
+        EXE = 6,
     }
 
-    #endregion    
 }
-
-
