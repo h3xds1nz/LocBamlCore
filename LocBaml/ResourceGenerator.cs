@@ -18,7 +18,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Diagnostics;
 using System.Resources;
-using System.Threading; 
+using System.Threading;
 using System.Windows.Threading;
 using System.Windows.Markup.Localizer;
 using System.Reflection.Metadata.Ecma335;
@@ -39,102 +39,100 @@ namespace BamlLocalization
         /// <param name="options">LocBaml options</param>
         /// <param name="dictionaries">the translation dictionaries</param>
         internal static void Generate(LocBamlOptions options, TranslationDictionariesReader dictionaries)
-        {   
+        {
             // base on the input, we generate differently            
-            switch(options.InputType)
+            switch (options.InputType)
             {
-                case FileType.BAML :                    
-                {                    
-                    // input file name
-                    string bamlName = Path.GetFileName(options.Input);
-
-                    // outpuf file name is Output dir + input file name
-                    string outputFileName = GetOutputFileName(options);                    
-
-                    // construct the full path
-                    string fullPathOutput = Path.Combine(options.Output, outputFileName);
-
-                    options.Write(StringLoader.Get("GenerateBaml", fullPathOutput));
-                                                                                
-                    using (Stream input = File.OpenRead(options.Input))
+                case FileType.BAML:
                     {
-                        using (Stream output = new FileStream(fullPathOutput, FileMode.Create))
+                        // input file name
+                        string bamlName = Path.GetFileName(options.Input);
+
+                        // outpuf file name is Output dir + input file name
+                        string outputFileName = GetOutputFileName(options);
+
+                        // construct the full path
+                        string fullPathOutput = Path.Combine(options.Output, outputFileName);
+
+                        options.Write(StringLoader.Get("GenerateBaml", fullPathOutput));
+
+                        using (Stream input = File.OpenRead(options.Input))
                         {
-                            BamlLocalizationDictionary dictionary = dictionaries[bamlName];
+                            using (Stream output = new FileStream(fullPathOutput, FileMode.Create))
+                            {
+                                BamlLocalizationDictionary dictionary = dictionaries[bamlName];
 
-                            // if it is null, just create an empty dictionary.
-                            if (dictionary == null)                            
-                                dictionary = new BamlLocalizationDictionary();
-                            
-                            GenerateBamlStream(input, output, dictionary, options);
-                        }                               
-                    }
+                                // if it is null, just create an empty dictionary.
+                                if (dictionary == null)
+                                    dictionary = new BamlLocalizationDictionary();
 
-                    options.WriteLine(StringLoader.Get("Done"));
-                    break;
-                }
-                case FileType.RESOURCES :
-                {
-                    string outputFileName = GetOutputFileName(options);
-                    string fullPathOutput = Path.Combine(options.Output, outputFileName);
-                                       
-                    using (Stream input = File.OpenRead(options.Input))
-                    {
-                        using (Stream output = File.OpenWrite(fullPathOutput))
-                        {
-                            // create a Resource reader on the input;
-                            ResourceReader reader = new(input);
-    
-                            // create a writer on the output;
-                            ResourceWriter writer = new(output);
-
-                            GenerateResourceStream(
-                                options,         // options
-                                options.Input,   // resources name
-                                reader,          // resource reader
-                                writer,          // resource writer
-                                dictionaries);   // translations
-
-                            reader.Close();
-                            
-                            // now generate and close
-                            writer.Generate();
-                            writer.Close();
+                                GenerateBamlStream(input, output, dictionary, options);
+                            }
                         }
-                    }
 
-                    options.WriteLine(StringLoader.Get("DoneGeneratingResource", outputFileName));
-                    break;
-                }
-		case FileType.EXE:
+                        options.WriteLine(StringLoader.Get("Done"));
+                        break;
+                    }
+                case FileType.RESOURCES:
+                    {
+                        string outputFileName = GetOutputFileName(options);
+                        string fullPathOutput = Path.Combine(options.Output, outputFileName);
+
+                        using (Stream input = File.OpenRead(options.Input))
+                        {
+                            using (Stream output = File.OpenWrite(fullPathOutput))
+                            {
+                                // create a Resource reader on the input;
+                                ResourceReader reader = new(input);
+
+                                // create a writer on the output;
+                                ResourceWriter writer = new(output);
+
+                                GenerateResourceStream(
+                                    options,         // options
+                                    options.Input,   // resources name
+                                    reader,          // resource reader
+                                    writer,          // resource writer
+                                    dictionaries);   // translations
+
+                                reader.Close();
+
+                                // now generate and close
+                                writer.Generate();
+                                writer.Close();
+                            }
+                        }
+
+                        options.WriteLine(StringLoader.Get("DoneGeneratingResource", outputFileName));
+                        break;
+                    }
+                case FileType.EXE:
                 case FileType.DLL:
-                {   
-                    GenerateAssembly(options, dictionaries);                    
-                    break;
-                }
+                    {
+                        GenerateAssembly(options, dictionaries);
+                        break;
+                    }
                 default:
-                {
-                    Debug.Assert(false, "Can't generate to this type");       
-                    break;
-                }
-            }            
+                    {
+                        Debug.Assert(false, "Can't generate to this type");
+                        break;
+                    }
+            }
         }
 
 
         private static void GenerateBamlStream(Stream input, Stream output, BamlLocalizationDictionary dictionary, LocBamlOptions options)
         {
             string commentFile = Path.ChangeExtension(options.Input, "loc");
-            TextReader commentStream = null;           
+            TextReader commentStream = null;
 
             try
             {
                 if (File.Exists(commentFile))
-                {
                     commentStream = new StreamReader(commentFile);
-                }
 
                 // create a localizabilty resolver based on reflection
-                BamlLocalizabilityByReflection localizabilityReflector = new(options.Assemblies); 
+                BamlLocalizabilityByReflection localizabilityReflector = new(options.Assemblies);
 
                 // create baml localizer
                 BamlLocalizer mgr = new(input, localizabilityReflector, commentStream);
@@ -145,23 +143,20 @@ namespace BamlLocalization
 
                 foreach (DictionaryEntry entry in dictionary)
                 {
-                    BamlLocalizableResourceKey key = (BamlLocalizableResourceKey) entry.Key;
+                    BamlLocalizableResourceKey key = (BamlLocalizableResourceKey)entry.Key;
                     // filter out unchanged items
                     if (!source.Contains(key) || entry.Value == null || source[key].Content != ((BamlLocalizableResource)entry.Value).Content)
                     {
                         translations.Add(key, (BamlLocalizableResource)entry.Value);
                     }
                 }
-                
+
                 // update baml
                 mgr.UpdateBaml(output, translations);
             }
             finally
             {
-                if (commentStream != null)
-                {
-                    commentStream.Close();
-                }
+                commentStream?.Close();
             }
         }
 
@@ -176,28 +171,28 @@ namespace BamlLocalization
 
             options.WriteLine(StringLoader.Get("GenerateResource", resourceName));
             // enumerate through each resource and generate it
-            foreach(DictionaryEntry entry in reader)            
+            foreach (DictionaryEntry entry in reader)
             {
-                string name = entry.Key as string;                
-				object resourceValue = null;
-                                
+                string name = entry.Key as string;
+                object resourceValue = null;
+
                 // See if it looks like a Baml resource
                 if (BamlStream.IsResourceEntryBamlStream(name, entry.Value))
                 {
-		    Stream targetStream = null;
+                    Stream targetStream = null;
                     options.Write("    ");
                     options.Write(StringLoader.Get("GenerateBaml", name));
 
                     // grab the localizations available for this Baml
                     string bamlName = BamlStream.CombineBamlStreamName(resourceName, name);
-                    BamlLocalizationDictionary localizations = dictionaries[bamlName];                    
+                    BamlLocalizationDictionary localizations = dictionaries[bamlName];
                     if (localizations != null)
                     {
                         targetStream = new MemoryStream();
-                        
+
                         // generate into a new Baml stream
                         GenerateBamlStream(
-                            (Stream) entry.Value,
+                            (Stream)entry.Value,
                             targetStream,
                             localizations,
                             options
@@ -205,19 +200,19 @@ namespace BamlLocalization
                     }
                     options.WriteLine(StringLoader.Get("Done"));
 
-		    // sets the generated object to be the generated baml stream
-		    resourceValue = targetStream;
+                    // sets the generated object to be the generated baml stream
+                    resourceValue = targetStream;
                 }
 
-		if (resourceValue == null)
+                if (resourceValue == null)
                 {
                     //
                     // The stream is not localized as Baml yet, so we will make a copy of this item into 
                     // the localized resources
                     //
 
-		    // We will add the value as is if it is serializable. Otherwise, make a copy
-		    resourceValue = entry.Value;
+                    // We will add the value as is if it is serializable. Otherwise, make a copy
+                    resourceValue = entry.Value;
 
                     object[] serializableAttributes = resourceValue.GetType().GetCustomAttributes(typeof(SerializableAttribute), true);
                     if (serializableAttributes.Length == 0)
@@ -233,12 +228,12 @@ namespace BamlLocalization
 
                             resourceValue = targetStream;
                         }
-                    }                
+                    }
                 }
 
-		if (resourceValue != null)
+                if (resourceValue != null)
                 {
-			writer.AddResource(name, resourceValue);
+                    writer.AddResource(name, resourceValue);
                 }
             }
         }
@@ -246,17 +241,17 @@ namespace BamlLocalization
         private static void GenerateStandaloneResource(string fullPathName, Stream resourceStream)
         {
             // simply do a copy for the stream
-            using (FileStream file = new FileStream(fullPathName, FileMode.Create, FileAccess.Write))
+            using (FileStream file = new(fullPathName, FileMode.Create, FileAccess.Write))
             {
                 const int BUFFER_SIZE = 4096;
                 byte[] buffer = new byte[BUFFER_SIZE];
                 int bytesRead = 1;
                 while (bytesRead > 0)
                 {
-                     bytesRead = resourceStream.Read(buffer, 0, BUFFER_SIZE);
-                     file.Write(buffer, 0, bytesRead);
-                }                                                           
-            }            
+                    bytesRead = resourceStream.Read(buffer, 0, BUFFER_SIZE);
+                    file.Write(buffer, 0, bytesRead);
+                }
+            }
         }
 
         //--------------------------------------------------
@@ -266,12 +261,15 @@ namespace BamlLocalization
         //--------------------------------------------------
         private static void GenerateAssembly(LocBamlOptions options, TranslationDictionariesReader dictionaries)
         {
-            // there are many names to be used when generating an assembly
-            string sourceAssemblyFullName   = options.Input;                // source assembly full path 
-            string outputAssemblyDir        = options.Output;               // output assembly directory
-            string outputAssemblyLocalName  = GetOutputFileName(options);   // output assembly name
-            string moduleLocalName          = GetAssemblyModuleLocalName(options, outputAssemblyLocalName); // the module name within the assmbly
-                
+            // source assembly full path 
+            string sourceAssemblyFullName = options.Input;
+            // output assembly directory
+            string outputAssemblyDir = options.Output;
+            // output assembly name
+            string outputAssemblyLocalName = GetOutputFileName(options);
+            // the module name within the assembly
+            string moduleLocalName = GetAssemblyModuleLocalName(options, outputAssemblyLocalName);
+
             // get the source assembly
             Assembly srcAsm = Assembly.LoadFrom(sourceAssemblyFullName);
 
@@ -279,13 +277,13 @@ namespace BamlLocalization
             AssemblyName targetAssemblyNameObj = srcAsm.GetName();
 
             // store the culture info of the source assembly
-            CultureInfo srcCultureInfo  = targetAssemblyNameObj.CultureInfo;
-            
+            CultureInfo srcCultureInfo = targetAssemblyNameObj.CultureInfo;
+
             // update it to use it for target assembly
-            targetAssemblyNameObj.Name        = Path.GetFileNameWithoutExtension(outputAssemblyLocalName);
+            targetAssemblyNameObj.Name = Path.GetFileNameWithoutExtension(outputAssemblyLocalName);
             targetAssemblyNameObj.CultureInfo = options.CultureInfo;
 
-            // we get a assembly builder
+            // we get an assembly builder
             MetadataBuilder metadataBuilder = new();
             metadataBuilder.AddAssembly(metadataBuilder.GetOrAddString(targetAssemblyNameObj.Name), targetAssemblyNameObj.Version,
                                         metadataBuilder.GetOrAddString(targetAssemblyNameObj.CultureName), default, 0, AssemblyHashAlgorithm.None);
@@ -297,31 +295,29 @@ namespace BamlLocalization
             BlobBuilder resourceBlob = new BlobBuilder(4096);
 
             options.WriteLine(StringLoader.Get("GenerateAssembly"));
-                      
+
             // now for each resource in the assembly
             foreach (string resourceName in srcAsm.GetManifestResourceNames())
-            {                
+            {
                 // get the resource location for the resource
                 ResourceLocation resourceLocation = srcAsm.GetManifestResourceInfo(resourceName).ResourceLocation;
-                               
+
                 // if this resource is in another assembly, we will skip it
                 if ((resourceLocation & ResourceLocation.ContainedInAnotherAssembly) != 0)
-                {
                     continue;   // in resource assembly, we don't have resource that is contained in another assembly
-                }
 
                 // gets the neutral resource name, giving it the source culture info
-                string neutralResourceName  = GetNeutralResModuleName(resourceName, srcCultureInfo);
+                string neutralResourceName = GetNeutralResModuleName(resourceName, srcCultureInfo);
 
                 // gets the target resource name, by giving it the target culture info
-                string targetResourceName   = GetCultureSpecificResourceName(neutralResourceName, options.CultureInfo);
+                string targetResourceName = GetCultureSpecificResourceName(neutralResourceName, options.CultureInfo);
 
                 // resource stream              
-                Stream resourceStream       = srcAsm.GetManifestResourceStream(resourceName);
-                
+                Stream resourceStream = srcAsm.GetManifestResourceStream(resourceName);
+
                 // see if it is a .resources
                 if (neutralResourceName.EndsWith(".resources", StringComparison.OrdinalIgnoreCase))
-                {                                   
+                {
                     // now we think we have resource stream 
                     // get the resource writer
                     MemoryStream stream = new MemoryStream();
@@ -333,7 +329,7 @@ namespace BamlLocalization
                         // Define resource ahead of time, this will spare us from having to calculate the offset
                         // OLD COMMENT: gets the resource writer from the module builder
                         metadataBuilder.AddManifestResource(ManifestResourceAttributes.Public, metadataBuilder.GetOrAddString(targetResourceName), default, (uint)resourceBlob.Count);
-                    }                                
+                    }
                     else
                     {
                         // OLD COMMENT: it is a standalone resource, we get the resource writer from the assembly builder
@@ -363,10 +359,10 @@ namespace BamlLocalization
                 else // TODO: This whole thing should just write into resourceBlob since there's no AddResourceFile in .NET
                 {
                     // else it is a stand alone untyped manifest resources.
-                    ReadOnlySpan<char> extension = Path.GetExtension(targetResourceName.AsSpan());                    
+                    ReadOnlySpan<char> extension = Path.GetExtension(targetResourceName.AsSpan());
 
                     string fullFileName = Path.Combine(outputAssemblyDir, targetResourceName);
-                    
+
                     // check if it is a .baml, case-insensitive
                     if (extension.Equals(".baml", StringComparison.OrdinalIgnoreCase))
                     {
@@ -375,7 +371,7 @@ namespace BamlLocalization
                         BamlLocalizationDictionary dictionary = dictionaries[resourceName];
 
                         // if it is null, just create an empty dictionary.
-                        if (dictionary != null)                            
+                        if (dictionary != null)
                         {
                             // it is a baml stream
                             using (Stream output = File.OpenWrite(fullFileName))
@@ -389,15 +385,15 @@ namespace BamlLocalization
                         else
                         {
                             // can't find localization of it, just copy it
-                            GenerateStandaloneResource( fullFileName, resourceStream);
+                            GenerateStandaloneResource(fullFileName, resourceStream);
                         }
                     }
                     else
                     {
                         // it is an untyped resource stream, just copy it
-                        GenerateStandaloneResource( fullFileName, resourceStream);
+                        GenerateStandaloneResource(fullFileName, resourceStream);
                     }
-    
+
                     // now add this resource file into the assembly
                     // NOTE: See TODO at the top of this statement
                     //targetAssemblyBuilder.AddResourceFile(
@@ -405,8 +401,8 @@ namespace BamlLocalization
                     //    targetResourceName,           // file name
                     //    ResourceAttributes.Public     // visibility of the resource to other assembly
                     //);
-                    
-                }  
+
+                }
             }
 
             // at the end, generate the assembly
@@ -431,48 +427,41 @@ namespace BamlLocalization
         // return the local output file name, i.e. without directory
         private static string GetOutputFileName(LocBamlOptions options)
         {
-            string outputFileName;
-            string inputFileName  = Path.GetFileName(options.Input);
-            
-            switch(options.InputType)
+            string inputFileName = Path.GetFileName(options.Input);
+
+            switch (options.InputType)
             {
                 case FileType.BAML:
-                {
                     return inputFileName;
-                }
-		case FileType.EXE:
-		{
-                     inputFileName = inputFileName.Remove(inputFileName.LastIndexOf('.')) + ".resources.dll";
-			return inputFileName;
-		}
-                case FileType.DLL :
-                {
-                    return inputFileName;                    
-                }
-                case FileType.RESOURCES :
-                {
-                    // get the output file name
-                    outputFileName        = inputFileName;
-                    
-                    // get to the last dot seperating filename and extension
-                    int lastDot = outputFileName.LastIndexOf('.');   
-                    int secondLastDot = outputFileName.LastIndexOf('.', lastDot - 1);
-                    if (secondLastDot > 0)
+                case FileType.EXE:
+                    return inputFileName.Remove(inputFileName.LastIndexOf('.')) + ".resources.dll";
+                case FileType.DLL:
+                    return inputFileName;
+                case FileType.RESOURCES:
                     {
-                        string cultureName = outputFileName.Substring(secondLastDot + 1, lastDot - secondLastDot - 1);
-                        if (LocBamlConst.IsValidCultureName(cultureName))
+                        // get the output file name
+                        ReadOnlySpan<char> outputFileName = inputFileName;
+
+                        // get to the last dot seperating filename and extension
+                        int lastDot = outputFileName.LastIndexOf('.');
+                        int secondLastDot = outputFileName.Slice(lastDot - 1).LastIndexOf('.');
+                        if (secondLastDot > 0)
                         {
-                            string extension = outputFileName.Substring(lastDot);
-                            string frontPart = outputFileName.Substring(0, secondLastDot + 1);
-                            outputFileName = frontPart + options.CultureInfo.Name + extension;
+                            string cultureName = inputFileName.Substring(secondLastDot + 1, lastDot - secondLastDot - 1);
+                            if (LocBamlConst.IsValidCultureName(cultureName))
+                            {
+                                ReadOnlySpan<char> extension = outputFileName.Slice(lastDot);
+                                ReadOnlySpan<char> frontPart = outputFileName.Slice(0, secondLastDot + 1);
+
+                                return $"{frontPart}{options.CultureInfo.Name}{extension}";
+                            }
                         }
+                        return inputFileName;
                     }
-                    return outputFileName;
-                }
-                default :
-                {
-                    throw new NotSupportedException();
-                }
+                default:
+                    {
+                        throw new NotSupportedException();
+                    }
             }
         }
 
@@ -482,7 +471,7 @@ namespace BamlLocalization
             if (finalAssemblyName.EndsWith(".resources.dll", StringComparison.OrdinalIgnoreCase))
             {
                 // we create the satellite assembly name
-                return $"{finalAssemblyName.Slice(0, finalAssemblyName.Length - ".resources.dll".Length)}.{options.CultureInfo.Name}.resources.dll";              
+                return $"{finalAssemblyName.Slice(0, finalAssemblyName.Length - ".resources.dll".Length)}.{options.CultureInfo.Name}.resources.dll";
             }
 
             return targetAssemblyName;
@@ -492,46 +481,40 @@ namespace BamlLocalization
         private static string GetNeutralResModuleName(string resourceName, CultureInfo cultureInfo)
         {
             if (cultureInfo.Equals(CultureInfo.InvariantCulture))
-            {
                 return resourceName;
-            }
-            else
+
+            // if it is an satellite assembly, we need to strip out the culture name
+            string normalizedName = resourceName.ToLower(CultureInfo.InvariantCulture);
+            int end = normalizedName.LastIndexOf(".resources");
+
+            if (end == -1)
+                return resourceName;
+
+            int start = normalizedName.LastIndexOf('.', end - 1);
+
+            if (start > 0 && end - start > 0)
             {
-                // if it is an satellite assembly, we need to strip out the culture name
-                string normalizedName = resourceName.ToLower(CultureInfo.InvariantCulture);
-                int end = normalizedName.LastIndexOf(".resources");
+                ReadOnlySpan<char> cultureTag = resourceName.AsSpan().Slice(start + 1, end - start - 1);
 
-                if (end < 0)
+                if (cultureTag.Equals(cultureInfo.Name, StringComparison.OrdinalIgnoreCase))
                 {
-                    return resourceName;
+                    // it has the correct culture name, so we can take it out
+                    return resourceName.Remove(start, end - start);
                 }
-
-                int start = normalizedName.LastIndexOf('.', end - 1);
-
-                if (start > 0 && end - start > 0)
-                {
-                    string cultureStr = resourceName.Substring( start + 1, end - start - 1);
-
-                    if (string.Compare(cultureStr, cultureInfo.Name, true) == 0)
-                    {
-                        // it has the correct culture name, so we can take it out
-                        return resourceName.Remove(start, end - start);
-                    }
-                }        
-                return resourceName;                       
             }
+            return resourceName;
         }
 
         private static string GetCultureSpecificResourceName(string neutralResourceName, CultureInfo culture)
         {
             // gets the extension
-            string extension    = Path.GetExtension(neutralResourceName);
+            ReadOnlySpan<char> extension = Path.GetExtension(neutralResourceName.AsSpan());
 
             // swap in culture name
-            string cultureName  = Path.ChangeExtension(neutralResourceName, culture.Name);
+            string cultureName = Path.ChangeExtension(neutralResourceName, culture.Name);
 
             // return the new name with the same extension
-            return cultureName + extension;
+            return string.Concat(cultureName, extension);
         }
-    }   
+    }
 }
