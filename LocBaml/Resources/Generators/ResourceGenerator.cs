@@ -408,7 +408,7 @@ namespace BamlLocalization.Resources
             BlobBuilder blob = new();
             peBuilder.Serialize(blob);
 
-            using (FileStream fileStream = new(outputAssemblyLocalName, FileMode.Create, FileAccess.Write))
+            using (FileStream fileStream = new(Path.Join(outputAssemblyDir, outputAssemblyLocalName), FileMode.Create, FileAccess.Write))
                 blob.WriteContentTo(fileStream);
 
             options.WriteLine(StringTable.Get("DoneGeneratingAssembly"));
