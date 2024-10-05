@@ -25,7 +25,7 @@ namespace BamlLocalization.Resources
         internal static void Write(LocBamlOptions options)
         {
             Stream output = new FileStream(options.Output, FileMode.Create);
-            InputBamlStreamList bamlStreamList = new(options);
+            BamlStreamList bamlStreamList = new(options);
 
             using (ResourceTextWriter writer = new(options.TranslationFileType, output))
             {
@@ -35,8 +35,7 @@ namespace BamlLocalization.Resources
                     options.Write("    ");
                     options.Write(StringLoader.Get("ProcessingBaml", bamlStreamList[i].Name));
 
-                    // Search for comment file in the same directory. The comment file has the extension to be 
-                    // "loc".
+                    // Search for comment file in the same directory. The comment file has the extension to be "loc".
                     string commentFile = Path.ChangeExtension(bamlStreamList[i].Name, "loc");
                     TextReader? commentStream = null;
 
