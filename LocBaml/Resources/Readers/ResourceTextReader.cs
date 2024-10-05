@@ -2,31 +2,27 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-//---------------------------------------------------------------------------
-//
-// Description: ResourceTextReader class 
-//              It reads values from a CSV file or tab-separated TXT file
-//
-//---------------------------------------------------------------------------
-
-using System;
-using System.IO;
-using System.Text;
 using System.Collections.Generic;
+using System.Text;
+using System.IO;
+using System;
 
 namespace BamlLocalization.Resources
 {
     /// <summary>
     /// Reader that reads value from a CSV file or Tab-separated TXT file
     /// </summary>
-    internal class ResourceTextReader : IDisposable 
+    internal sealed class ResourceTextReader : IDisposable
     {
+        private readonly TextReader _reader;    // internal text reader
+        private readonly int _delimiter;        // delimiter for each column
+        private List<string>? _columns;         // A list storing all the columns of a row
+
         internal ResourceTextReader(FileType fileType, Stream stream)
         {
-            _delimiter = LocBamlConst.GetDelimiter(fileType);
-            if(stream == null)
-                throw new ArgumentNullException("stream");
+            ArgumentNullException.ThrowIfNull(stream, nameof(stream));
 
+            _delimiter = LocBamlConst.GetDelimiter(fileType);         
             _reader = new StreamReader(stream);
         }    
 
@@ -41,17 +37,17 @@ namespace BamlLocalization.Resources
                 return false;
             }        
             
-            ReadState currentState = ReadState.TokenStart;
+            ResourceReadState currentState = ResourceReadState.TokenStart;
             _columns = new List<string>();            
 
             StringBuilder buffer = new StringBuilder();
             
-            while (currentState != ReadState.LineEnd)
+            while (currentState != ResourceReadState.LineEnd)
             {
                 switch (currentState)
                 {
                     // start of a token
-                    case ReadState.TokenStart:                        
+                    case ResourceReadState.TokenStart:                        
                     {
                         if (currentChar == _delimiter)
                         {
@@ -63,26 +59,25 @@ namespace BamlLocalization.Resources
                         {
                             // jump to Quoted content if it token starts with a quote.
                             // and also ignore this quote
-                            currentState = ReadState.QuotedContent;
+                            currentState = ResourceReadState.QuotedContent;
                         }
-                        else if (currentChar == '\n' || 
-                                (currentChar == '\r' && _reader.Peek() == '\n'))
+                        else if (currentChar == '\n' || (currentChar == '\r' && _reader.Peek() == '\n'))
                         {
                             // we see a '\n' or '\r\n' sequence. Go to LineEnd
                             // ignore these chars
-                            currentState = ReadState.LineEnd;                            
+                            currentState = ResourceReadState.LineEnd;                            
                         }
                         else 
                         {
                             // safe to say that this is part of a unquoted content
-                            buffer.Append((Char) currentChar);
-                            currentState = ReadState.UnQuotedContent;                            
+                            buffer.Append((char)currentChar);
+                            currentState = ResourceReadState.UnQuotedContent;                            
                         }                        
                         break;
                     }         
 
                     // inside of an unquoted content
-                    case ReadState.UnQuotedContent :
+                    case ResourceReadState.UnQuotedContent :
                     {
                         if (currentChar == _delimiter)
                         {
@@ -96,20 +91,20 @@ namespace BamlLocalization.Resources
                         {
                             // see a new line
                             // igorne these chars and jump to LineEnd
-                            currentState = ReadState.LineEnd;
+                            currentState = ResourceReadState.LineEnd;
                         }
                         else
                         {
                             // we are good. store this char
                             // notice, even we see a '\"', we will just treat it like 
                             // a normal char
-                            buffer.Append((Char) currentChar);                            
+                            buffer.Append((char)currentChar);                            
                         }
                         break;                        
                     }         
 
                     // inside of a quoted content
-                    case ReadState.QuotedContent :
+                    case ResourceReadState.QuotedContent:
                     {
                         if (currentChar ==  '\"')
                         {   
@@ -119,18 +114,18 @@ namespace BamlLocalization.Resources
                             {
                                 // we will ignore the next quote.
                                 currentChar =  _reader.Read();
-                                buffer.Append( (Char) currentChar);
+                                buffer.Append((char)currentChar);
                             }
                             else 
                             {   // we have a single quote. We fall back to unquoted content state
                                 // and igorne the curernt quote
-                                currentState = ReadState.UnQuotedContent;
+                                currentState = ResourceReadState.UnQuotedContent;
                             }                            
                         }
                         else 
                         {
                             // we are still inside of a quote, anything is accepted
-                            buffer.Append((Char) currentChar);                                                       
+                            buffer.Append((char)currentChar);                                                       
                         }
                         break;                           
                     }         
@@ -154,7 +149,7 @@ namespace BamlLocalization.Resources
             return true;
         }
         
-        internal string GetColumn(int index)
+        internal string? GetColumn(int index)
         {
             if (_columns != null && index < _columns.Count && index >= 0)
             {
@@ -165,26 +160,12 @@ namespace BamlLocalization.Resources
                 return null;
             }
         }
-           
-        internal void Close()
-        {
-            if (_reader != null)
-            {
-                _reader.Close();
-            }
-        }
 
-        void IDisposable.Dispose()
+        private void StoreTokenAndResetState(ref StringBuilder buffer, ref ResourceReadState currentState)
         {
-            Close();
-        }
+            if (_columns is null)
+                throw new InvalidOperationException("_columns was NULL");
 
-        //---------------------------------
-        // private functions
-        //---------------------------------
-        
-        private void StoreTokenAndResetState(ref StringBuilder buffer, ref ReadState currentState)
-        {
             // add the token into buffer. The token can be empty
             _columns.Add(buffer.ToString());
 
@@ -192,15 +173,15 @@ namespace BamlLocalization.Resources
             buffer = new StringBuilder();
 
             // we continue to token state state
-            currentState = ReadState.TokenStart;
+            currentState = ResourceReadState.TokenStart;
         }
 
-        // skip all new line and return the first char after newlines.
-        // newline means '\r\n' or '\n'
+        // skip all new line and return the first char after newlines. newline means '\r\n' or '\n'
         private int SkipAllNewLine()
         {
             int _char;
-            while ((_char = _reader.Read())>=0)
+
+            while ((_char = _reader.Read()) >= 0)
             {
                 if (_char == '\n')
                 {
@@ -212,48 +193,23 @@ namespace BamlLocalization.Resources
                     _reader.Read();
 
                     // and continue
-                    continue;   
+                    continue;
                 }
-                else 
+                else
                 {
                     // stop here
                     break;
                 }
             }
-            return _char;            
+
+            return _char;
         }
-        
 
-        private readonly TextReader _reader;     // internal text reader
-        private readonly int        _delimiter;  // delimiter
-        private List<string>        _columns;    // An arraylist storing all the columns of a row
+        // This will be called from IDisposable.Dispose()
+        internal void Close() => _reader?.Close();
 
-        /// <summary>
-        /// Enum representing internal states of the reader when reading 
-        /// the CSV or tab-separated TXT file
-        /// </summary>
-        private enum ReadState
-        {
-            /// <summary>
-            /// State in which the reader is at the start of a column
-            /// </summary>
-            TokenStart, 
-
-            /// <summary>
-            /// State in which the reader is reading contents that are quoted
-            /// </summary>
-            QuotedContent,
-
-            /// <summary>
-            /// State in which the reader is reading contents not in quotes
-            /// </summary>
-            UnQuotedContent,
-
-            /// <summary>
-            /// State in which the end of a line is reached
-            /// </summary>
-            LineEnd,                
-        }
-        
+        // IDisposable interface implementation
+        void IDisposable.Dispose() => Close();
+ 
     }
 }

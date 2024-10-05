@@ -212,7 +212,7 @@ namespace BamlLocalization
         /// <summary>
         /// Write message line depending on IsVerbose flag
         /// </summary>
-        internal void WriteLine(string message)
+        internal void WriteLine(string? message)
         {
             if (IsVerbose)
             {
@@ -223,7 +223,7 @@ namespace BamlLocalization
         /// <summary>
         /// Write the message depending on IsVerbose flag
         /// </summary>        
-        internal void Write(string message)
+        internal void Write(string? message)
         {
             if (IsVerbose)
             {

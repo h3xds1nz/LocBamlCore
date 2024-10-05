@@ -39,7 +39,7 @@ namespace BamlLocalization.Resources
                 rowNumber++;
 
                 // field #1 is the baml name.
-                string bamlName = reader.GetColumn(0);
+                string? bamlName = reader.GetColumn(0);
 
                 // it can't be null
                 if (bamlName == null)
@@ -54,27 +54,27 @@ namespace BamlLocalization.Resources
                 }
 
                 // field #2: key to the localizable resource
-                string key = reader.GetColumn(1);
+                string? key = reader.GetColumn(1);
                 if (key == null)
                     throw new ApplicationException(StringLoader.Get("NullBamlKeyNameInRow"));
 
                 BamlLocalizableResourceKey resourceKey = LocBamlConst.StringToResourceKey(key);
 
                 // get the dictionary               
-                if (!_table.TryGetValue(bamlName, out BamlLocalizationDictionary dictionary))
+                if (!_table.TryGetValue(bamlName, out BamlLocalizationDictionary? dictionary))
                 {
                     // we create one if it is not there yet.
                     dictionary = new BamlLocalizationDictionary();
                     _table[bamlName] = dictionary;
                 }
 
-                BamlLocalizableResource resource;
+                BamlLocalizableResource? resource;
 
                 // the rest of the fields are either all null,
                 // or all non-null. If all null, it means the resource entry is deleted.
 
                 // get the string category
-                string categoryString = reader.GetColumn(2);
+                string? categoryString = reader.GetColumn(2);
                 if (categoryString == null)
                 {
                     // it means all the following fields are null starting from column #3.
@@ -109,8 +109,7 @@ namespace BamlLocalization.Resources
                     resource.Content = reader.GetColumn(6);
 
                     // in case content being the last column, consider null as empty.
-                    if (resource.Content == null)
-                        resource.Content = string.Empty;
+                    resource.Content ??= string.Empty;
 
                     // field > #7: Ignored.
                 }

@@ -202,9 +202,9 @@ namespace BamlLocalization
             errorMessage = options.CheckAndSetDefault();       
         }
 
-        private static void PrintLogo(LocBamlOptions option)
+        private static void PrintLogo(LocBamlOptions? option)
         {
-            if (option == null || !option.HasNoLogo)
+            if (!option?.HasNoLogo ?? false)
             {               
                 Console.WriteLine(StringLoader.Get("Msg_Copyright", GetAssemblyVersion()));
             }

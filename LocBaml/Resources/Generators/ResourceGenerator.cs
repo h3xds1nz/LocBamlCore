@@ -124,7 +124,7 @@ namespace BamlLocalization.Resources
         private static void GenerateBamlStream(Stream input, Stream output, BamlLocalizationDictionary dictionary, LocBamlOptions options)
         {
             string commentFile = Path.ChangeExtension(options.Input, "loc");
-            TextReader commentStream = null;
+            TextReader? commentStream = null;
 
             try
             {
@@ -179,7 +179,7 @@ namespace BamlLocalization.Resources
                 // See if it looks like a Baml resource
                 if (BamlStream.IsResourceEntryBamlStream(name, entry.Value))
                 {
-                    Stream targetStream = null;
+                    Stream? targetStream = null;
                     options.Write("    ");
                     options.Write(StringLoader.Get("GenerateBaml", name));
 

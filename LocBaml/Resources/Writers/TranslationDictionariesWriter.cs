@@ -25,9 +25,9 @@ namespace BamlLocalization.Resources
         internal static void Write(LocBamlOptions options)
         {
             Stream output = new FileStream(options.Output, FileMode.Create);
-            InputBamlStreamList bamlStreamList = new InputBamlStreamList(options);
+            InputBamlStreamList bamlStreamList = new(options);
 
-            using (ResourceTextWriter writer = new ResourceTextWriter(options.TranslationFileType, output))
+            using (ResourceTextWriter writer = new(options.TranslationFileType, output))
             {
                 options.WriteLine(StringLoader.Get("WriteBamlValues"));
                 for (int i = 0; i < bamlStreamList.Count; i++)
@@ -38,7 +38,7 @@ namespace BamlLocalization.Resources
                     // Search for comment file in the same directory. The comment file has the extension to be 
                     // "loc".
                     string commentFile = Path.ChangeExtension(bamlStreamList[i].Name, "loc");
-                    TextReader commentStream = null;
+                    TextReader? commentStream = null;
 
                     try
                     {
@@ -50,6 +50,7 @@ namespace BamlLocalization.Resources
                         // create the baml localizer
                         AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
                         BamlLocalizer mgr = new(bamlStreamList[i].Stream, new BamlLocalizabilityByReflection(options.Assemblies), commentStream);
+                        AppDomain.CurrentDomain.AssemblyResolve -= CurrentDomain_AssemblyResolve;
 
                         // extract localizable resource from the baml stream
                         BamlLocalizationDictionary dict = mgr.ExtractResources();
@@ -61,7 +62,8 @@ namespace BamlLocalization.Resources
                             writer.WriteColumn(bamlStreamList[i].Name);
 
                             BamlLocalizableResourceKey key = (BamlLocalizableResourceKey)entry.Key;
-                            BamlLocalizableResource resource = (BamlLocalizableResource)entry.Value;
+                            // TODO: I can't remember from two months ago whether the value can be NULL, so watch out for this suppression
+                            BamlLocalizableResource resource = (BamlLocalizableResource)entry.Value!;
 
                             // column 2: localizable resource key
                             writer.WriteColumn(LocBamlConst.ResourceKeyToString(key));
@@ -89,8 +91,7 @@ namespace BamlLocalization.Resources
                     }
                     finally
                     {
-                        if (commentStream != null)
-                            commentStream.Close();
+                        commentStream?.Close();
                     }
                 }
 
@@ -99,7 +100,7 @@ namespace BamlLocalization.Resources
             }
         }
 
-        private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
+        private static Assembly? CurrentDomain_AssemblyResolve(object? sender, ResolveEventArgs args)
         {
             // TODO: We might wanna give the users an ability to provide a custom assembly in case they've forgotten
             return null;
