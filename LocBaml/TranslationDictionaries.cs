@@ -17,13 +17,14 @@ using System.Windows;
 using System.Diagnostics;
 using System.ComponentModel;
 using System.Windows.Markup.Localizer;
+using System.Collections.Generic;
 
 namespace BamlLocalization
 {
     /// <summary>
     /// Writer to write out localizable values into CSV or tab-separated txt files.     
     /// </summary>
-    internal static class  TranslationDictionariesWriter
+    internal static class TranslationDictionariesWriter
     {
         /// <summary>
         /// Write the localizable key-value pairs
@@ -55,11 +56,7 @@ namespace BamlLocalization
                         }
 
                         // create the baml localizer
-                        BamlLocalizer mgr = new BamlLocalizer(
-                            bamlStreamList[i].Stream,
-                            new BamlLocalizabilityByReflection(options.Assemblies),
-                            commentStream
-                            );
+                        BamlLocalizer mgr = new(bamlStreamList[i].Stream, new BamlLocalizabilityByReflection(options.Assemblies), commentStream);
 
                         // extract localizable resource from the baml stream
                         BamlLocalizationDictionary dict = mgr.ExtractResources();
@@ -122,11 +119,7 @@ namespace BamlLocalization
         /// <param name="reader">resoure text reader that reads CSV or a tab-separated txt file</param>
         internal TranslationDictionariesReader(ResourceTextReader reader)
         {
-            if (reader == null)
-                throw new ArgumentNullException("reader");
-
-            // hash key is case insensitive strings
-            _table = new Hashtable();
+            ArgumentNullException.ThrowIfNull(reader);
 
             // we read each Row
             int rowNumber = 0;
@@ -157,12 +150,12 @@ namespace BamlLocalization
                 BamlLocalizableResourceKey resourceKey = LocBamlConst.StringToResourceKey(key);
 
                 // get the dictionary 
-                BamlLocalizationDictionary dictionary = this[bamlName];                
+                BamlLocalizationDictionary dictionary = _table[bamlName];                
                 if (dictionary == null)
                 {   
                     // we create one if it is not there yet.
                     dictionary = new BamlLocalizationDictionary();
-                    this[bamlName] = dictionary;                
+                    _table[bamlName] = dictionary;                
                 }
                 
                 BamlLocalizableResource resource;
@@ -220,17 +213,13 @@ namespace BamlLocalization
 
         internal BamlLocalizationDictionary this[string key]
         {
-            get{
-                return (BamlLocalizationDictionary) _table[key.ToLowerInvariant()];
-            }
-            set
-            {
-                _table[key.ToLowerInvariant()] = value;
-            }
+            get => _table[key];
+            set => _table[key] = value;
         }
 
-        // hashtable that maps from baml name to its ResourceDictionary
-        private Hashtable _table;                
+        // hashtable that maps from baml name to its ResourceDictionary (case-insensitive)
+        private readonly Dictionary<string, BamlLocalizationDictionary> _table = new(StringComparer.OrdinalIgnoreCase); 
+        
         private static TypeConverter BoolTypeConverter  = TypeDescriptor.GetConverter(true);
         private static TypeConverter StringCatConverter = TypeDescriptor.GetConverter(LocalizationCategory.Text);
     }
