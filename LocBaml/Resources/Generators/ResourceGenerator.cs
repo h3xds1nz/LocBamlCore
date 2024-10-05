@@ -158,8 +158,9 @@ namespace BamlLocalization.Resources
                 TranslationDictionariesReader dictionaries  // the translations
             )
         {
+            // Indent the logger
+            options.Write(Environment.NewLine);
 
-            options.WriteLine(StringLoader.Get("GenerateResource", resourceName));
             // enumerate through each resource and generate it
             foreach (DictionaryEntry entry in reader)
             {
@@ -284,7 +285,7 @@ namespace BamlLocalization.Resources
             // Create a resource blob where we will store all our resources
             BlobBuilder resourceBlob = new BlobBuilder(4096);
 
-            options.WriteLine(StringLoader.Get("GenerateAssembly"));
+            options.WriteLine(StringLoader.Get("GenerateAssembly", targetAssemblyNameObj.FullName));
 
             // now for each resource in the assembly
             foreach (string resourceName in srcAsm.GetManifestResourceNames())
@@ -332,6 +333,7 @@ namespace BamlLocalization.Resources
                     ResourceReader reader = new(resourceStream);
 
                     // generate the resources
+                    options.WriteLine(StringLoader.Get("GenerateResource", targetResourceName));
                     GenerateResourceStream(options, resourceName, reader, writer, dictionaries);
 
                     // make sure this has been flushed

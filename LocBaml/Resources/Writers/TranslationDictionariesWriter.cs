@@ -25,12 +25,15 @@ namespace BamlLocalization.Resources
         /// <param name="options"></param>
         internal static void Write(ParseOptions options)
         {
+            options.WriteLine(StringLoader.Get("CreateTranslationsFile", options.Output));
             Stream output = new FileStream(options.Output, FileMode.Create);
-            BamlStreamList bamlStreamList = new(options);
 
+            BamlStreamList bamlStreamList = new(options);
             using (ResourceTextWriter writer = new(options.TranslationsTargetType, output))
             {
                 options.WriteLine(StringLoader.Get("WriteBamlValues"));
+                // Indent the logger
+                options.Write(Environment.NewLine);
                 for (int i = 0; i < bamlStreamList.Count; i++)
                 {
                     options.Write("    ");
