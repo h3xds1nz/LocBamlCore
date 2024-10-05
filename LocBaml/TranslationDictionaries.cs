@@ -18,6 +18,7 @@ using System.Diagnostics;
 using System.ComponentModel;
 using System.Windows.Markup.Localizer;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace BamlLocalization
 {
@@ -56,6 +57,7 @@ namespace BamlLocalization
                         }
 
                         // create the baml localizer
+                        AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
                         BamlLocalizer mgr = new(bamlStreamList[i].Stream, new BamlLocalizabilityByReflection(options.Assemblies), commentStream);
 
                         // extract localizable resource from the baml stream
@@ -104,6 +106,12 @@ namespace BamlLocalization
                 // close all the baml input streams, output stream is closed by writer.
                 bamlStreamList.Close();            
             }   
+        }
+
+        private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
+        {
+            // TODO: We might wanna give the users an ability to provide a custom assembly in case they've forgotten
+            return null;
         }
     }
 

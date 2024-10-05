@@ -26,10 +26,9 @@ namespace BamlLocalization
     /// </summary>
     public static class LocBaml
     {
-        // Private fields/constants
+        // Private constants
         private const int ErrorCode = 100;        
         private const int SuccessCode = 0;
-        private static Dispatcher _dispatcher;
 
         // Supported command line options
         // NOTE: "*" prefix means the option must have a value; options without "*" means the option can't have a value 
@@ -65,8 +64,6 @@ namespace BamlLocalization
                 // no option to process. Noop.
                 return SuccessCode;
             }
-            
-            _dispatcher = Dispatcher.CurrentDispatcher;
 
             PrintLogo(options);
 
