@@ -149,9 +149,8 @@ namespace BamlLocalization
 
                 BamlLocalizableResourceKey resourceKey = LocBamlConst.StringToResourceKey(key);
 
-                // get the dictionary 
-                BamlLocalizationDictionary dictionary = _table[bamlName];                
-                if (dictionary == null)
+                // get the dictionary               
+                if (!_table.TryGetValue(bamlName, out BamlLocalizationDictionary dictionary))
                 {   
                     // we create one if it is not there yet.
                     dictionary = new BamlLocalizationDictionary();
@@ -213,7 +212,7 @@ namespace BamlLocalization
 
         internal BamlLocalizationDictionary this[string key]
         {
-            get => _table[key];
+            get => _table.TryGetValue(key, out BamlLocalizationDictionary dictionary) ? dictionary : null;
             set => _table[key] = value;
         }
 
