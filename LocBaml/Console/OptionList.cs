@@ -5,6 +5,7 @@
 // Modified 5th Oct 2024
 // by h3xds1nz
 
+using BamlLocalization.Data;
 using System;
 
 namespace BamlLocalization.ConsoleSupport
@@ -60,7 +61,7 @@ namespace BamlLocalization.ConsoleSupport
                 {
                     // If we've already seen a prefix match then the input word is ambiguous.
                     if (bMatched)
-                        throw new ArgumentException(StringLoader.Get("Err_AmbigousOption", optionName.ToString()));
+                        throw new ArgumentException(StringTable.Get("Err_AmbigousOption", optionName.ToString()));
 
                     // Remember this partial match.
                     bMatched = true;
@@ -73,7 +74,7 @@ namespace BamlLocalization.ConsoleSupport
                 return _commandLineOptions[iMatch];
 
             // Else the word doesn't match at all.
-            throw new ArgumentException(StringLoader.Get("Err_UnknownOption", optionName.ToString()));
+            throw new ArgumentException(StringTable.Get("Err_UnknownOption", optionName.ToString()));
         }
     }
 }

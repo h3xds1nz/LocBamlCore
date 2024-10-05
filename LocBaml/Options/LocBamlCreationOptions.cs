@@ -7,6 +7,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.Collections.Generic;
+using BamlLocalization.Data;
 using System.Globalization;
 using System.Reflection;
 using System.Security;
@@ -43,19 +44,19 @@ namespace BamlLocalization.Options
             // Rule #1: One and only one action at a time
             // i.e. Can't parse and generate at the same time; must do only one of them
             if ((ToParse && ToGenerate) || (!ToParse && !ToGenerate))
-                return StringLoader.Get("MustChooseOneAction");
+                return StringTable.Get("MustChooseOneAction");
 
             // Rule #2: Must have an input 
             if (string.IsNullOrEmpty(Input))
-                return StringLoader.Get("InputFileRequired");
+                return StringTable.Get("InputFileRequired");
 
             // Rule #2.1: Input must exist
             if (!File.Exists(Input))
-                return StringLoader.Get("FileNotFound", Input);
+                return StringTable.Get("FileNotFound", Input);
 
             // Rule #2.2: Input must have a valid file type
             if (!TryGetFileType(Input, out FileType? inputType))
-                return StringLoader.Get("FileTypeNotSupported", Path.GetExtension(Input));
+                return StringTable.Get("FileTypeNotSupported", Path.GetExtension(Input));
 
             // Assign valid file type
             InputType = inputType.Value;
@@ -64,15 +65,15 @@ namespace BamlLocalization.Options
             {
                 // Rule #3: before generation, we must have Culture string - unless we generating from baml
                 if (CultureInfo is null && InputType != FileType.BAML)
-                    return StringLoader.Get("CultureNameNeeded", InputType.ToString());
+                    return StringTable.Get("CultureNameNeeded", InputType.ToString());
 
                 // Rule #4: before generation, we must have translation file
                 if (string.IsNullOrEmpty(Translations))
-                    return StringLoader.Get("TranslationNeeded");
+                    return StringTable.Get("TranslationNeeded");
 
                 // Rule #4.1: Translation file must exist
                 if (!File.Exists(Translations))
-                    return StringLoader.Get("TranslationNotFound", Translations);
+                    return StringTable.Get("TranslationNotFound", Translations);
 
                 ReadOnlySpan<char> transExtension = Path.GetExtension(Translations.AsSpan());
                 if (transExtension.Equals($".{nameof(FileType.CSV)}", StringComparison.OrdinalIgnoreCase))
@@ -98,7 +99,7 @@ namespace BamlLocalization.Options
                 else
                 {
                     // Rule #5.2: If it is generating, and the output can't be empty
-                    return StringLoader.Get("OutputDirectoryNeeded");
+                    return StringTable.Get("OutputDirectoryNeeded");
                 }
             }
             else
@@ -151,7 +152,7 @@ namespace BamlLocalization.Options
                 {
                     // it is to generate. And Output should point to the directory name.                    
                     if (!Directory.Exists(Output))
-                        return StringLoader.Get("OutputDirectoryError", Output);
+                        return StringTable.Get("OutputDirectoryError", Output);
                 }
             }
 

@@ -10,6 +10,7 @@ using System.Reflection.Metadata.Ecma335;
 using System.Windows.Markup.Localizer;
 using System.Reflection.Metadata;
 using BamlLocalization.Options;
+using BamlLocalization.Data;
 using System.Globalization;
 using System.Diagnostics;
 using System.Collections;
@@ -46,7 +47,7 @@ namespace BamlLocalization.Resources
                         // construct the full path
                         string fullPathOutput = Path.Combine(options.Output, outputFileName);
 
-                        options.Write(StringLoader.Get("GenerateBaml", fullPathOutput));
+                        options.Write(StringTable.Get("GenerateBaml", fullPathOutput));
 
                         using (Stream input = File.OpenRead(options.Input))
                         {
@@ -60,7 +61,7 @@ namespace BamlLocalization.Resources
                             }
                         }
 
-                        options.WriteLine(StringLoader.Get("Done"));
+                        options.WriteLine(StringTable.Get("Done"));
                         break;
                     }
                 case FileType.RESOURCES:
@@ -93,7 +94,7 @@ namespace BamlLocalization.Resources
                             }
                         }
 
-                        options.WriteLine(StringLoader.Get("DoneGeneratingResource", outputFileName));
+                        options.WriteLine(StringTable.Get("DoneGeneratingResource", outputFileName));
                         break;
                     }
                 case FileType.EXE:
@@ -172,7 +173,7 @@ namespace BamlLocalization.Resources
                 {
                     Stream? targetStream = null;
                     options.Write("    ");
-                    options.Write(StringLoader.Get("GenerateBaml", name));
+                    options.Write(StringTable.Get("GenerateBaml", name));
 
                     // grab the localizations available for this Baml
                     string bamlName = BamlStream.CombineBamlStreamName(resourceName, name);
@@ -189,7 +190,7 @@ namespace BamlLocalization.Resources
                             options
                         );
                     }
-                    options.WriteLine(StringLoader.Get("Done"));
+                    options.WriteLine(StringTable.Get("Done"));
 
                     // sets the generated object to be the generated baml stream
                     resourceValue = targetStream;
@@ -285,7 +286,7 @@ namespace BamlLocalization.Resources
             // Create a resource blob where we will store all our resources
             BlobBuilder resourceBlob = new BlobBuilder(4096);
 
-            options.WriteLine(StringLoader.Get("GenerateAssembly", targetAssemblyNameObj.FullName));
+            options.WriteLine(StringTable.Get("GenerateAssembly", targetAssemblyNameObj.FullName));
 
             // now for each resource in the assembly
             foreach (string resourceName in srcAsm.GetManifestResourceNames())
@@ -333,7 +334,7 @@ namespace BamlLocalization.Resources
                     ResourceReader reader = new(resourceStream);
 
                     // generate the resources
-                    options.WriteLine(StringLoader.Get("GenerateResource", targetResourceName));
+                    options.WriteLine(StringTable.Get("GenerateResource", targetResourceName));
                     GenerateResourceStream(options, resourceName, reader, writer, dictionaries);
 
                     // make sure this has been flushed
@@ -371,9 +372,9 @@ namespace BamlLocalization.Resources
                             using (Stream output = File.OpenWrite(fullFileName))
                             {
                                 options.Write("    ");
-                                options.WriteLine(StringLoader.Get("GenerateStandaloneBaml", fullFileName));
+                                options.WriteLine(StringTable.Get("GenerateStandaloneBaml", fullFileName));
                                 GenerateBamlStream(resourceStream, output, dictionary, options);
-                                options.WriteLine(StringLoader.Get("Done"));
+                                options.WriteLine(StringTable.Get("Done"));
                             }
                         }
                         else
@@ -410,7 +411,7 @@ namespace BamlLocalization.Resources
             using (FileStream fileStream = new(outputAssemblyLocalName, FileMode.Create, FileAccess.Write))
                 blob.WriteContentTo(fileStream);
 
-            options.WriteLine(StringLoader.Get("DoneGeneratingAssembly"));
+            options.WriteLine(StringTable.Get("DoneGeneratingAssembly"));
         }
 
 

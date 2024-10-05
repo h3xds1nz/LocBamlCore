@@ -2,10 +2,14 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
+// Modified 5th Oct 2024
+// by h3xds1nz
+
+using System.Windows.Markup.Localizer;
+using BamlLocalization.Data;
 using System.Globalization;
 using System.Diagnostics;
-using System.Windows.Markup.Localizer;
+using System;
 
 namespace BamlLocalization
 {
@@ -56,7 +60,7 @@ namespace BamlLocalization
             int nameEnd = value.LastIndexOf(':');
             if (nameEnd < 0)
             {
-                throw new ArgumentException(StringLoader.Get("ResourceKeyFormatError"));
+                throw new ArgumentException(StringTable.Get("ResourceKeyFormatError"));
             }
 
             string name  = value.Substring(0, nameEnd);
@@ -64,7 +68,7 @@ namespace BamlLocalization
             
             if (classEnd < 0 || classEnd < nameEnd || classEnd == value.Length)
             {
-                throw new ArgumentException(StringLoader.Get("ResourceKeyFormatError"));
+                throw new ArgumentException(StringTable.Get("ResourceKeyFormatError"));
             }
 
             string className = value.Substring(nameEnd + 1, classEnd - nameEnd - 1);

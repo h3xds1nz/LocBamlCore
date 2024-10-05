@@ -9,6 +9,7 @@ using BamlLocalization.ConsoleSupport;
 using System.Collections.Generic;
 using BamlLocalization.Resources;
 using BamlLocalization.Options;
+using BamlLocalization.Data;
 using System.Globalization;
 using System.Reflection;
 using System.IO;
@@ -47,7 +48,7 @@ namespace BamlLocalization
             {
                 // there are errors                
                 PrintLogo(options);
-                Console.WriteLine(StringLoader.Get("ErrorMessage", errorMessage));                
+                Console.WriteLine(StringTable.Get("ErrorMessage", errorMessage));                
                 Console.WriteLine();
                 PrintUsage();
                 return ErrorCode;    // error
@@ -196,7 +197,7 @@ namespace BamlLocalization
                 else
                 {
                     // something that we don't recognize
-                    errorMessage = StringLoader.Get("Err_InvalidOption", commandLineOption.Name);
+                    errorMessage = StringTable.Get("Err_InvalidOption", commandLineOption.Name);
                     options = null;
                     return;
                 }
@@ -214,13 +215,13 @@ namespace BamlLocalization
         {
             if (!option?.HasNoLogo ?? false)
             {               
-                Console.WriteLine(StringLoader.Get("Msg_Copyright", GetAssemblyVersion()));
+                Console.WriteLine(StringTable.Get("Msg_Copyright", GetAssemblyVersion()));
             }
         }
 
         private static void PrintUsage()
         {
-            Console.WriteLine(StringLoader.Get("Msg_Usage"));
+            Console.WriteLine(StringTable.Get("Msg_Usage"));
         }         
 
         private static string GetAssemblyVersion()

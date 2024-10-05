@@ -9,17 +9,17 @@ using System.Globalization;
 using System.Resources;
 using System;
 
-namespace BamlLocalization
+namespace BamlLocalization.Data
 {
     /// <summary>
     /// Encapsulates <see cref="ResourceManager"/> for the resource string table.
     /// </summary>
-    internal static class StringLoader
+    internal static class StringTable
     {
         /// <summary>
         /// Retrieves the exception string resources <see cref="ResourceManager"/> for current locale, currently only en-US is available.
         /// </summary>
-        private static readonly ResourceManager _resourceManager = new("Data.StringTable", typeof(StringLoader).Assembly);
+        private static readonly ResourceManager _resourceManager = new("Data.StringTable", typeof(StringTable).Assembly);
 
         /// <summary>
         /// Retrieves the message using <paramref name="id"/> and formats in any <paramref name="args"/> using <see cref="CultureInfo.CurrentCulture"/>.

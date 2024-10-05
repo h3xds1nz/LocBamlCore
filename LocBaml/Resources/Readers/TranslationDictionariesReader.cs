@@ -7,6 +7,7 @@
 
 using System.Windows.Markup.Localizer;
 using System.Collections.Generic;
+using BamlLocalization.Data;
 using System.Windows;
 using System;
 
@@ -39,7 +40,7 @@ namespace BamlLocalization.Resources
 
                 // it can't be null
                 if (bamlName == null)
-                    throw new ApplicationException(StringLoader.Get("EmptyRowEncountered"));
+                    throw new ApplicationException(StringTable.Get("EmptyRowEncountered"));
 
                 if (string.IsNullOrEmpty(bamlName))
                 {
@@ -52,7 +53,7 @@ namespace BamlLocalization.Resources
                 // field #2: key to the localizable resource
                 string? key = reader.GetColumn(1);
                 if (key == null)
-                    throw new ApplicationException(StringLoader.Get("NullBamlKeyNameInRow"));
+                    throw new ApplicationException(StringTable.Get("NullBamlKeyNameInRow"));
 
                 BamlLocalizableResourceKey resourceKey = LocBamlConst.StringToResourceKey(key);
 
@@ -83,7 +84,7 @@ namespace BamlLocalization.Resources
                     for (int i = 3; i < 6; i++)
                     {
                         if (reader.GetColumn(i) == null)
-                            throw new Exception(StringLoader.Get("InvalidRow"));
+                            throw new Exception(StringTable.Get("InvalidRow"));
                     }
 
                     // now we know all are non-null. let's try to create a resource

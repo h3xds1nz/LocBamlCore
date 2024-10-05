@@ -7,6 +7,7 @@
 
 using System.Windows.Markup.Localizer;
 using BamlLocalization.Options;
+using BamlLocalization.Data;
 using System.Collections;
 using System.Reflection;
 using System.IO;
@@ -25,19 +26,19 @@ namespace BamlLocalization.Resources
         /// <param name="options"></param>
         internal static void Write(ParseOptions options)
         {
-            options.WriteLine(StringLoader.Get("CreateTranslationsFile", options.Output));
+            options.WriteLine(StringTable.Get("CreateTranslationsFile", options.Output));
             Stream output = new FileStream(options.Output, FileMode.Create);
 
             BamlStreamList bamlStreamList = new(options);
             using (ResourceTextWriter writer = new(options.TranslationsTargetType, output))
             {
-                options.WriteLine(StringLoader.Get("WriteBamlValues"));
+                options.WriteLine(StringTable.Get("WriteBamlValues"));
                 // Indent the logger
                 options.Write(Environment.NewLine);
                 for (int i = 0; i < bamlStreamList.Count; i++)
                 {
                     options.Write("    ");
-                    options.Write(StringLoader.Get("ProcessingBaml", bamlStreamList[i].Name));
+                    options.Write(StringTable.Get("ProcessingBaml", bamlStreamList[i].Name));
 
                     // Search for comment file in the same directory. The comment file has the extension to be "loc".
                     string commentFile = Path.ChangeExtension(bamlStreamList[i].Name, "loc");
@@ -90,7 +91,7 @@ namespace BamlLocalization.Resources
                             writer.EndLine();
                         }
 
-                        options.WriteLine(StringLoader.Get("Done"));
+                        options.WriteLine(StringTable.Get("Done"));
                     }
                     finally
                     {

@@ -5,6 +5,7 @@
 // Modified 5th Oct 2024
 // by h3xds1nz
 
+using BamlLocalization.Data;
 using System;
 
 namespace BamlLocalization.ConsoleSupport
@@ -63,11 +64,11 @@ namespace BamlLocalization.ConsoleSupport
 
                     // Check that the user hasn't specified a value separator for an option that doesn't take a value.
                     if (!option.CanHaveValue && (iColon != -1))
-                        throw new ApplicationException(StringLoader.Get("Err_NoValueRequired", option.OptionName));
+                        throw new ApplicationException(StringTable.Get("Err_NoValueRequired", option.OptionName));
 
                     // Check that the user has put a colon if the option requires a value.
                     if (option.RequiresValue && (iColon == -1))
-                        throw new ApplicationException(StringLoader.Get("Err_ValueRequired", option.OptionName));
+                        throw new ApplicationException(StringTable.Get("Err_ValueRequired", option.OptionName));
 
                     // Go look for a value if there is one.
                     if (option.CanHaveValue && iColon != -1)
@@ -80,12 +81,12 @@ namespace BamlLocalization.ConsoleSupport
                             // next command line arg.
                             if (i + 1 == arguments.Length)
                             {
-                                throw new ApplicationException(StringLoader.Get("Err_ValueRequired", option.OptionName));
+                                throw new ApplicationException(StringTable.Get("Err_ValueRequired", option.OptionName));
                             }
                             else
                             {
                                 if (arguments[i + 1].StartsWith('/') || arguments[i + 1].StartsWith('-'))
-                                    throw new ApplicationException(StringLoader.Get("Err_ValueRequired", option.OptionName));
+                                    throw new ApplicationException(StringTable.Get("Err_ValueRequired", option.OptionName));
 
                                 optionValue = arguments[i + 1];
                                 i++;
