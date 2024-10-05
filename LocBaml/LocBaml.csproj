@@ -13,8 +13,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<EmbeddedResource Include="Resources\StringTable.resText">
-			<LogicalName>Resources.StringTable.resources</LogicalName>
+		<EmbeddedResource Include="Data\StringTable.resText">
+			<LogicalName>Data.StringTable.resources</LogicalName>
 		</EmbeddedResource>
 	</ItemGroup>
 

@@ -19,7 +19,7 @@ namespace BamlLocalization
         /// <summary>
         /// Retrieves the exception string resources <see cref="ResourceManager"/> for current locale, currently only en-US is available.
         /// </summary>
-        private static readonly ResourceManager _resourceManager = new("Resources.StringTable", typeof(StringLoader).Assembly);
+        private static readonly ResourceManager _resourceManager = new("Data.StringTable", typeof(StringLoader).Assembly);
 
         /// <summary>
         /// Retrieves the message using <paramref name="id"/> and formats in any <paramref name="args"/> using <see cref="CultureInfo.CurrentCulture"/>.
