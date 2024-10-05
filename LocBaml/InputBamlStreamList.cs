@@ -16,20 +16,22 @@ using System.Collections;
 using System.Reflection;
 using System.Diagnostics;
 using System.Resources;
+using System.Collections.Generic;
 
 namespace BamlLocalization
 {
     /// <summary>
     /// Class that enumerates all the baml streams in the input file
     /// </summary>
-    internal class InputBamlStreamList
+    internal sealed class InputBamlStreamList
     {
+        private readonly List<BamlStream> _bamlStreams = new();
+
         /// <summary>
         /// constructor
         /// </summary>        
         internal InputBamlStreamList(LocBamlOptions options)
         {
-            _bamlStreams = new ArrayList();
             switch (options.InputType)
             {
                 case FileType.BAML:
@@ -91,7 +93,7 @@ namespace BamlLocalization
         /// </summary>        
         internal BamlStream this[int i]
         {
-            get => (BamlStream)_bamlStreams[i];
+            get => _bamlStreams[i];
         }
 
         /// <summary>
@@ -101,7 +103,7 @@ namespace BamlLocalization
         {
             for (int i = 0; i < _bamlStreams.Count; i++)
             {
-               ((BamlStream)_bamlStreams[i]).Close();
+               _bamlStreams[i].Close();
             }            
         }
 
@@ -122,8 +124,6 @@ namespace BamlLocalization
                 }    
             }
         }
-
-        private readonly ArrayList _bamlStreams;
     }
 
     /// <summary>
