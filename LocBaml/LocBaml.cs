@@ -62,8 +62,9 @@ namespace BamlLocalization
 
             PrintLogo(options);
 
-            try{
-                // it is to parse
+            try
+            {
+                // We can either parse or generate resources
                 if (options.ToParse)
                 {
                     ParseBamlResources(options);
@@ -73,10 +74,10 @@ namespace BamlLocalization
                     GenerateBamlResources(options);
                 }
             }
-            catch(Exception e)                
+            catch (Exception)                
             {
 #if DEBUG
-                throw e;
+                throw;
 #else
                 Console.WriteLine(e.Message);
                 return ErrorCode;            
