@@ -31,7 +31,11 @@ namespace BamlLocalization.Data
         {
             string? message = _resourceManager.GetString(id);
 
+#if NET9_0_OR_GREATER
             return message is not null && !args.IsEmpty ? string.Format(CultureInfo.CurrentCulture, message, args) : message;
+#else
+            return message is not null && !args.IsEmpty ? string.Format(CultureInfo.CurrentCulture, message, args.ToArray()) : message;
+#endif
         }
     }
 }

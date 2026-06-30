@@ -33,7 +33,12 @@ namespace BamlLocalization.Resources
             ArgumentNullException.ThrowIfNull(output, nameof(output));
 
             _delimiter = LocBamlConst.GetDelimiter(fileType);
+
+#if NET9_0_OR_GREATER
             _delimiters = SearchValues.Create('\"', '\r', '\n', _delimiter);
+#else
+            _delimiters = SearchValues.Create(['\"', '\r', '\n', _delimiter]);
+#endif
 
             // Append UTF8 BOM (Byte Order Marker)    
             _writer = new StreamWriter(output, new UTF8Encoding(true));

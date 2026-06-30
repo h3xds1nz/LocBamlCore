@@ -7,6 +7,7 @@
 
 using System.Reflection;
 using System;
+using System.Collections.Generic;
 
 namespace BamlLocalization.Options
 {
@@ -25,6 +26,8 @@ namespace BamlLocalization.Options
 
         internal Assembly[]? Assemblies { get; }
 
+        internal List<string>? SearchPaths { get; }
+
         public LocBamlOptions(LocBamlCreationOptions options)
         {
             Input = options.Input;
@@ -35,6 +38,7 @@ namespace BamlLocalization.Options
             InputType = options.InputType;
 
             Assemblies = options.Assemblies;
+            SearchPaths = options.SearchPaths;
         }
 
         /// <summary>

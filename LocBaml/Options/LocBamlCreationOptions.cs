@@ -34,6 +34,7 @@ namespace BamlLocalization.Options
         internal FileType InputType { get; set; }
         internal List<string>? AssemblyPaths { get; set; }
         internal Assembly[]? Assemblies { get; set; }
+        internal List<string>? SearchPaths { get; set; }
 
         /// <summary>
         /// Verifies that the options set are consistent and it's okay to create <see cref="LocBamlOptions"/>.
@@ -163,8 +164,20 @@ namespace BamlLocalization.Options
                 for (int i = 0; i < Assemblies.Length; i++)
                 {
                     try
-                    {   // load the assembly                      
-                        Assemblies[i] = Assembly.LoadFrom(AssemblyPaths[i]);
+                    {
+                        string path = AssemblyPaths[i];
+                        FileAttributes attributes = File.GetAttributes(path);
+
+                        if (attributes.HasFlag(FileAttributes.Directory))
+                        {
+                            SearchPaths ??= [];
+                            SearchPaths.Add(path);
+                        }
+                        else
+                        {
+                            // load the assembly
+                            Assemblies[i] = Assembly.LoadFrom(AssemblyPaths[i]);
+                        }
                     }
                     catch (Exception ex) when (ex is ArgumentException or FileLoadException or BadImageFormatException
                                                   or FileNotFoundException or PathTooLongException or SecurityException)
